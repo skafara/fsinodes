@@ -8,7 +8,7 @@ public:
 	virtual ~I_FSOps() = default;
 
 	virtual void OP_format(uint32_t size) = 0;
-	virtual void OP_load(std::istream &cmd_istream) = 0;
+	virtual void OP_load(const std::string &path) = 0;
 
 	virtual void OP_cd(const std::string &path) = 0;
 	virtual void OP_pwd() const = 0;

@@ -9,4 +9,6 @@ public:
 	~I_FSContainer() override = default;
 
 	virtual size_t Get_Size() const = 0;
+
+	virtual void Clear() = 0;
 };

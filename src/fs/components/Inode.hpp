@@ -5,6 +5,8 @@
 #include "../../io/A_OffsetReadableWritable.hpp"
 
 
+constexpr uint32_t kInode_Directs_Cnt = 5;
+
 #pragma pack(push, 1)
 
 struct s_Inode {
@@ -12,7 +14,7 @@ struct s_Inode {
 	const uint8_t Refs_Cnt{};
 	const uint32_t File_Size{};
 
-	const uint32_t Direct[5]{};
+	const uint32_t Direct[kInode_Directs_Cnt]{};
 
 	const uint32_t Indirect1{};
 	const uint32_t Indirect2{};
@@ -23,6 +25,8 @@ using t_Inode = struct s_Inode;
 
 class Inode : public A_OffsetReadableWritable {
 public:
+	static constexpr uint32_t kRef_Unset = -1;
+
 	Inode(const std::shared_ptr<I_ReadableWritable> &inode_data, size_t offset);
 
 	bool Get_Is_Dir() const;

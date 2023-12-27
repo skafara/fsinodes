@@ -5,6 +5,11 @@ Iterator_DirItems::Iterator_DirItems(Inode &inode, const std::shared_ptr<Data> &
 	_inode(inode), _data(data), _it_dblocks(_inode, _data) {
 	if (_it_dblocks == _it_dblocks.end()) {
 		Is_Depleted = true;
+	} else {
+		t_DirItem dir_item = *(*this);
+		if (dir_item.Inode_Idx == 0 && std::string{dir_item.Item_Name}.empty()) {
+			Is_Depleted = true;
+		}
 	}
 }
 
@@ -45,7 +50,7 @@ Iterator_DirItems &Iterator_DirItems::operator++() {
 }
 
 bool Iterator_DirItems::operator==(const Iterator_DirItems &other) const {
-	return (this->Is_Depleted && other.Is_Depleted) || (this->_it_dir_item_idx == other._it_dir_item_idx); // TODO
+	return (this->Is_Depleted && other.Is_Depleted) || (this->_it_dir_item_idx == other._it_dir_item_idx);
 }
 
 bool Iterator_DirItems::operator!=(const Iterator_DirItems &other) const {
@@ -53,20 +58,15 @@ bool Iterator_DirItems::operator!=(const Iterator_DirItems &other) const {
 }
 
 Iterator_DirItems Iterator_DirItems::Append_Dir_Item(uint32_t inode_idx, const std::string &item_name) {
-	Iterator_DirItems it{*this};
-	for (; it != it.end(); ++it); // predelat podminku == end pro depleted iteratory
+	for (; *this != end(); ++(*this));
 
-	// TODO maybe alloc another
-	// TODO hranicni podminky
-	(*_it_dblocks).Set_Dir_Item(it._it_dir_item_idx, inode_idx, item_name);
+	(*_it_dblocks).Set_Dir_Item(_it_dir_item_idx, inode_idx, item_name);
+	Is_Depleted = false;
 
 	return *this;
 }
 
 Iterator_DirItems Iterator_DirItems::Remove_Dir_Item() {
-	// TODO maybe dealloc
-	// TODO hranicni podminky
-
 	// TODO swap s poslednim
 	Iterator_DirItems it_old{*this};
 	for (;; ++it_old) {

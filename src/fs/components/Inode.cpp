@@ -54,8 +54,8 @@ Inode &Inode::Unset_Directs_Indirects() {
 	for (uint32_t i = 0; i < 5; ++i) { // TODO
 		Set_Direct(i, -1); //TODO
 	}
-	Set_Indirect1(-1);
-	Set_Indirect2(-1);
+	Set_Indirect1(-1); // TODO
+	Set_Indirect2(-1); // TODO
 	return *this;
 }
 

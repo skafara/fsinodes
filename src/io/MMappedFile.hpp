@@ -16,6 +16,8 @@ public:
 	size_t Get_Size() const override;
 	void Resize(size_t size) override;
 
+	void Clear() override;
+
 	void Read(t_Byte_Buf &buf, size_t idx, size_t len) const override;
 	void Write(const t_Byte_Buf &buf, size_t idx, size_t len) override;
 
@@ -29,4 +31,5 @@ private:
 	const std::string _path;
 	int _fd;
 	std::byte *_data;
+	uint32_t _size;
 };

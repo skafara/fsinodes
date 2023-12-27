@@ -17,7 +17,12 @@ void Simulator::Run() {
 			return;
 		}
 
-		const auto op = FSCmdParser::Parse(line);
-		op(*_fs);
+		try {
+			const auto op = FSCmdParser::Parse(line);
+			op(*_fs);
+		}
+		catch (const std::exception &e) {
+			std::cerr << e.what() << std::endl;
+		}
 	}
 }

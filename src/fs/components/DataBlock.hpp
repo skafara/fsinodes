@@ -7,12 +7,6 @@
 
 
 #pragma pack(push, 1)
-struct s_DataBlock { // netreba?
-	const std::byte Data[1024]; // TODO magic
-};
-#pragma pack(pop)
-
-#pragma pack(push, 1)
 struct s_DirItem {
 	const uint32_t Inode_Idx;
 	char Item_Name[12]; // TODO magic
@@ -28,10 +22,12 @@ using t_DirItem = struct s_DirItem;
 
 class DataBlock : public A_OffsetReadableWritable {
 public:
+	static constexpr uint32_t kSize = 1024;
+
 	DataBlock(const std::shared_ptr<I_ReadableWritable> &dblock_data, size_t offset);
 
-	void Get_Content(t_Byte_Buf &buf, uint32_t lim = 1024) const;
-	void Set_Content(const t_Byte_Buf &buf, uint32_t lim = 1024);
+	void Get_Content(t_Byte_Buf &buf, uint32_t lim = kSize) const;
+	void Set_Content(const t_Byte_Buf &buf, uint32_t lim = kSize);
 
 	t_DirItem Get_Dir_Item(size_t idx) const;
 	void Set_Dir_Item(size_t idx, uint32_t item_inode_idx, const std::string &item_name); // nebo inode a char[]

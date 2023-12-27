@@ -40,16 +40,10 @@ t_FSOp FSCmdParser::Parse(const std::string &line) {
 		}
 	}
 
-	throw -1; // TODO
+	throw std::invalid_argument{"Command '" + cmd + "' does not exist."};
 }
 
 t_FSOp FSCmdParser::Parse_OP_format(std::istream &args) {
-	/*uint32_t size{};
-	args >> size;
-
-	return [size](I_FSOps &fs) {
-		fs.OP_format(size);
-	};*/
 	const std::regex size_pattern("([1-9]\\d*)(KB|MB|GB)");
 	std::smatch match;
 
@@ -57,18 +51,18 @@ t_FSOp FSCmdParser::Parse_OP_format(std::istream &args) {
 	args >> size_input;
 
 	if (!std::regex_match(size_input, match, size_pattern)) {
-		throw -1;
+		throw std::invalid_argument{"'" + size_input + "' is not a valid size."};
 	}
 
 	const uint32_t number = static_cast<uint32_t>(std::stoul(match[1].str()));
 	const std::string &unit = match[2].str();
 	uint32_t multiplier = 1;
 	if (unit == "KB") {
-		multiplier = 1024; // TODO
+		multiplier = 1024;
 	} else if (unit == "MB") {
-		multiplier = 1024 * 1024;
-	} else if (unit == "GB") {
-		multiplier = 1024 * 1024 * 1024;
+		multiplier = 1048576;
+	} else {
+		multiplier = 1073741824;
 	}
 
 	const uint32_t size = number * multiplier;
@@ -81,13 +75,8 @@ t_FSOp FSCmdParser::Parse_OP_load(std::istream &args) {
 	std::string path{};
 	args >> path;
 
-	if (!std::filesystem::exists(path)) {
-		throw -1;
-	}
-
 	return [path](I_FSOps &fs) {
-		std::ifstream ifstream{path};
-		fs.OP_load(ifstream);
+		fs.OP_load(path);
 	};
 }
 

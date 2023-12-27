@@ -11,6 +11,31 @@
 #include "components/Data.hpp"
 
 
+enum class FSMessages {
+	kOk,
+	kPathNotFound,
+	kFileNotFound,
+	kNotEmpty,
+	kCannotCreateFile
+};
+
+const std::unordered_map<FSMessages, const std::string> FSMessages_Strings{
+	{FSMessages::kOk, "OK"},
+	{FSMessages::kPathNotFound, "PATH NOT FOUND"},
+	{FSMessages::kFileNotFound, "FILE NOT FOUND"},
+	{FSMessages::kNotEmpty, "NOT EMPTY"},
+	{FSMessages::kCannotCreateFile, "CANNOT CREATE FILE"}
+};
+
+const char *FSMessage_String(FSMessages message);
+
+class PathNotFoundException : public std::exception {
+public:
+	const char* what() const noexcept override {
+		return FSMessage_String(FSMessages::kPathNotFound);
+	}
+};
+
 constexpr uint32_t kIdx_None = -1;using t_DataBlockAcquirer = std::function<uint32_t ()>;
 
 class FileSystem : public I_FSOps {
@@ -21,7 +46,7 @@ public:
 	FileSystem &operator=(const FileSystem &) = delete;
 
 	void OP_format(uint32_t size) override;
-	void OP_load(std::istream &cmd_istream) override;
+	void OP_load(const std::string &path) override;
 
 	void OP_cd(const std::string &path) override;
 	void OP_pwd() const override;
@@ -43,6 +68,16 @@ public:
 	void OP_outcp(const std::string &path1, const std::string &path2) override;
 
 private:
+	static constexpr uint32_t Superblock_Offset = 0;
+
+	inline static const std::string Root_Dir_Path = "/";
+	static constexpr uint32_t Root_Dir_Inode_Idx = 0;
+	static constexpr uint32_t Root_Dir_DBlock_Idx = 0;
+
+	static constexpr char Path_Delimiter = '/';
+	inline static const std::string Dot = ".";
+	inline static const std::string Dot_Dot = "..";
+
 	const std::string _fs_path; // TODO necessary?
 	std::ostream &_out_stream;
 	std::shared_ptr<I_FSContainer> _fs_container;
@@ -69,4 +104,6 @@ private:
 	uint32_t Acquire_Inode();
 
 	void Init_Components();
+
+	void Print_Message(FSMessages message) const;
 };

@@ -11,6 +11,14 @@ void Superblock::Set(t_Superblock &superblock) {
 	Write(0, superblock);
 }
 
+uint32_t Superblock::Get_Inodes_Cnt() const {
+	return Read<uint32_t>(offsetof(t_Superblock, Inodes_Cnt));
+}
+
+uint32_t Superblock::Get_Data_Blocks_Cnt() const {
+	return Read<uint32_t>(offsetof(t_Superblock, Clusters_Cnt));
+}
+
 uint32_t Superblock::Get_BMap_Inodes_Start_Addr() const {
 	return Read<uint32_t>(offsetof(t_Superblock, BMap_Inodes_Start_Addr));
 }
