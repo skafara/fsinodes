@@ -19,10 +19,8 @@ public:
 	bool operator==(const Iterator_DataBlocks& other) const;
 	bool operator!=(const Iterator_DataBlocks& other) const;
 
-	//uint32_t Get_Direct();
-
-	//Iterator_DataBlocks Reserve_Another_Data_Block();
-	Iterator_DataBlocks Append_Data_Block(const t_DataBlockAcquirer& dblock_acquirer);
+	Iterator_DataBlocks Append_Data_Block(const t_DataBlockAcquirer &dblock_acquirer);
+	Iterator_DataBlocks Release_Data_Blocks(const t_DataBlockReleaser &dblock_releaser);
 
 private:
 	Inode &_inode;

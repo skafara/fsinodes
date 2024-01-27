@@ -212,12 +212,35 @@ void FileSystem::OP_mv(const std::string &path1, const std::string &path2) {
 
 void FileSystem::OP_rm(const std::string &path) {
 	Assert_Is_Formatted();
-	uint32_t inode_idx = Resolve_Path(path);
-	Inode inode = _inodes->Get(inode_idx);
 
+	try {
+		const uint32_t inode_idx = Resolve_Path(path);
+		Inode inode = _inodes->Get(inode_idx);
+		if (inode.Get_Is_Dir()) {
+			throw PathNotFoundException{};
+		}
 
+		const uint32_t dir_inode_idx = Resolve_Parent(path);
+		Inode dir_inode = _inodes->Get(dir_inode_idx);
 
-	_out_stream << "RM" << std::endl;
+		// release dblocks
+		Iterator_DataBlocks it_dblocks{inode, _data};
+		it_dblocks.Release_Data_Blocks([this] (uint32_t inode_idx) {
+			_bm_data->Set(inode_idx, false);
+		});
+
+		// release inode
+		_bm_inodes->Set(inode_idx, false);
+
+		Iterator_DirItems it_dir_items{dir_inode, _data};
+		for (; (*it_dir_items).Inode_Idx != inode_idx; ++it_dir_items);
+		it_dir_items.Remove_Dir_Item();
+
+		Print_Message(FSMessages::kOk);
+	}
+	catch (const PathNotFoundException &) {
+		throw FSException{FSMessages::kFileNotFound};
+	}
 }
 
 void FileSystem::OP_mkdir(const std::string &path) {

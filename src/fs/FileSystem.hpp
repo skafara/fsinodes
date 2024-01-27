@@ -56,6 +56,7 @@ public:
 };*/
 
 using t_DataBlockAcquirer = std::function<uint32_t ()>;
+using t_DataBlockReleaser = std::function<void (uint32_t)>;
 
 class FileSystem : public I_FSOps {
 public:
