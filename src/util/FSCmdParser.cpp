@@ -1,4 +1,3 @@
-#include <fstream>
 #include <sstream>
 #include <regex>
 
@@ -30,12 +29,18 @@ const std::unordered_map<std::string, const t_FSCmdParser> FSCmdParser::kCmds_Pa
 
 t_FSOp FSCmdParser::Parse(const std::string &line) {
 	std::istringstream cmd_isstream{line};
-	std::string cmd{};
+	std::string cmd;
 
 	std::getline(cmd_isstream, cmd, ' '); // get cmd name
 	for (const auto &cmd_parser : kCmds_Parsers) {
 		if (cmd_parser.first == cmd) { // cmd name
 			const t_FSOp op = cmd_parser.second(cmd_isstream); // parse cmd, args, get fs op
+
+			std::string _;
+			if (!cmd_isstream || cmd_isstream >> _) { // invalid args or args left
+				throw std::invalid_argument{"Invalid Command Format"};
+			}
+
 			return op; // parsed fs op
 		}
 	}
@@ -56,7 +61,7 @@ t_FSOp FSCmdParser::Parse_OP_format(std::istream &args) {
 
 	const uint32_t number = static_cast<uint32_t>(std::stoul(match[1].str()));
 	const std::string &unit = match[2].str();
-	uint32_t multiplier = 1;
+	uint32_t multiplier;
 	if (unit == "KB") {
 		multiplier = 1024;
 	} else if (unit == "MB") {
@@ -81,7 +86,7 @@ t_FSOp FSCmdParser::Parse_OP_load(std::istream &args) {
 }
 
 t_FSOp FSCmdParser::Parse_OP_cd(std::istream &args) {
-	std::string path{};
+	std::string path;
 	args >> path;
 
 	return [path](I_FSOps &fs) {
@@ -89,17 +94,15 @@ t_FSOp FSCmdParser::Parse_OP_cd(std::istream &args) {
 	};
 }
 
-t_FSOp FSCmdParser::Parse_OP_pwd(std::istream &_) {
+t_FSOp FSCmdParser::Parse_OP_pwd(std::istream &) {
 	return [](I_FSOps &fs) {
 		fs.OP_pwd();
 	};
 }
 
 t_FSOp FSCmdParser::Parse_OP_cp(std::istream &args) {
-	std::string path1{};
-	std::string path2{};
-	args >> path1;
-	args >> path2;
+	std::string path1, path2;
+	args >> path1 >> path2;
 
 	return [path1, path2](I_FSOps &fs) {
 		fs.OP_cp(path1, path2);
@@ -107,10 +110,8 @@ t_FSOp FSCmdParser::Parse_OP_cp(std::istream &args) {
 }
 
 t_FSOp FSCmdParser::Parse_OP_mv(std::istream &args) {
-	std::string path1{};
-	std::string path2{};
-	args >> path1;
-	args >> path2;
+	std::string path1, path2;
+	args >> path1 >> path2;
 
 	return [path1, path2](I_FSOps &fs) {
 		fs.OP_mv(path1, path2);
@@ -118,8 +119,9 @@ t_FSOp FSCmdParser::Parse_OP_mv(std::istream &args) {
 }
 
 t_FSOp FSCmdParser::Parse_OP_rm(std::istream &args) {
-	std::string path{};
+	std::string path;
 	args >> path;
+	Assert_Path_Not_Dot_Ddot(path);
 
 	return [path](I_FSOps &fs) {
 		fs.OP_rm(path);
@@ -127,8 +129,9 @@ t_FSOp FSCmdParser::Parse_OP_rm(std::istream &args) {
 }
 
 t_FSOp FSCmdParser::Parse_OP_mkdir(std::istream &args) {
-	std::string path{};
+	std::string path;
 	args >> path;
+	Assert_Path_Not_Dot_Ddot(path);
 
 	return [path](I_FSOps &fs) {
 		fs.OP_mkdir(path);
@@ -136,8 +139,9 @@ t_FSOp FSCmdParser::Parse_OP_mkdir(std::istream &args) {
 }
 
 t_FSOp FSCmdParser::Parse_OP_rmdir(std::istream &args) {
-	std::string path{};
+	std::string path;
 	args >> path;
+	Assert_Path_Not_Dot_Ddot(path);
 
 	return [path](I_FSOps &fs) {
 		fs.OP_rmdir(path);
@@ -145,8 +149,12 @@ t_FSOp FSCmdParser::Parse_OP_rmdir(std::istream &args) {
 }
 
 t_FSOp FSCmdParser::Parse_OP_ls(std::istream &args) {
-	std::string path{};
-	args >> path;
+	std::string path{kDot};
+	if (!args.eof()) {
+		if (!(args >> path)) {
+			args.clear();
+		}
+	}
 
 	return [path](I_FSOps &fs) {
 		fs.OP_ls(path);
@@ -154,7 +162,7 @@ t_FSOp FSCmdParser::Parse_OP_ls(std::istream &args) {
 }
 
 t_FSOp FSCmdParser::Parse_OP_cat(std::istream &args) {
-	std::string path{};
+	std::string path;
 	args >> path;
 
 	return [path](I_FSOps &fs) {
@@ -163,7 +171,7 @@ t_FSOp FSCmdParser::Parse_OP_cat(std::istream &args) {
 }
 
 t_FSOp FSCmdParser::Parse_OP_info(std::istream &args) {
-	std::string path{};
+	std::string path;
 	args >> path;
 
 	return [path](I_FSOps &fs) {
@@ -172,10 +180,8 @@ t_FSOp FSCmdParser::Parse_OP_info(std::istream &args) {
 }
 
 t_FSOp FSCmdParser::Parse_OP_incp(std::istream &args) {
-	std::string path1{};
-	std::string path2{};
-	args >> path1;
-	args >> path2;
+	std::string path1, path2;
+	args >> path1 >> path2;
 
 	return [path1, path2](I_FSOps &fs) {
 		fs.OP_incp(path1, path2);
@@ -183,12 +189,17 @@ t_FSOp FSCmdParser::Parse_OP_incp(std::istream &args) {
 }
 
 t_FSOp FSCmdParser::Parse_OP_outcp(std::istream &args) {
-	std::string path1{};
-	std::string path2{};
-	args >> path1;
-	args >> path2;
+	std::string path1, path2;
+	args >> path1 >> path2;
 
 	return [path1, path2](I_FSOps &fs) {
 		fs.OP_outcp(path1, path2);
 	};
+}
+
+void FSCmdParser::Assert_Path_Not_Dot_Ddot(const std::filesystem::path &path) {
+	const std::filesystem::path filename = path.filename();
+	if (filename == kDot || filename == kDot_Dot) {
+		throw std::invalid_argument{"./.. Not Allowed"};
+	}
 }

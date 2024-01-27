@@ -7,6 +7,7 @@ class I_FSOps {
 public:
 	virtual ~I_FSOps() = default;
 
+public:
 	virtual void OP_format(uint32_t size) = 0;
 	virtual void OP_load(const std::string &path) = 0;
 

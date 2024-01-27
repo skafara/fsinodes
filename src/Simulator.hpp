@@ -7,11 +7,11 @@
 
 class Simulator {
 public:
-	Simulator(std::istream &cmd_istream, std::unique_ptr<I_FSOps> fs);
+	//Simulator(std::istream &cmd_istream, std::unique_ptr<I_FSOps> fs);
 
-	void Run();
+	static void Run(std::istream &cmd_istream, I_FSOps &fs);
 
 private:
-	std::istream &_cmd_istream;
-	const std::unique_ptr<I_FSOps> _fs;
+	/*std::istream &_cmd_istream;
+	const std::unique_ptr<I_FSOps> _fs;*/
 };

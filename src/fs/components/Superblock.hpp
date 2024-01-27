@@ -36,7 +36,7 @@ class Superblock : public A_OffsetReadableWritable {
 public:
 	Superblock(const std::shared_ptr<I_ReadableWritable> &sb_data, size_t offset);
 
-	void Set(t_Superblock &superblock);
+	void Set(const t_Superblock &superblock);
 
 	uint32_t Get_Inodes_Cnt() const;
 	uint32_t Get_Data_Blocks_Cnt() const;

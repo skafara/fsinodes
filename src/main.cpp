@@ -27,8 +27,7 @@ int main(int argc, char **argv) {
 	Print_Info();
 
 	std::unique_ptr<I_FSOps> fs = std::make_unique<FileSystem>(argv[1], std::cout);
-	Simulator sim{std::cin, std::move(fs)};
-	sim.Run();
+	Simulator::Run(std::cin, *fs);
 
 	return EXIT_SUCCESS;
 }

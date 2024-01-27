@@ -1,7 +1,7 @@
 #pragma once
 
-
 #include "../fs/FileSystem.hpp"
+
 
 using t_FSOp = std::function<void (I_FSOps &)>;
 using t_FSCmdParser = std::function<t_FSOp (std::istream &)>;
@@ -13,6 +13,7 @@ public:
 private:
 	static const std::unordered_map<std::string, const t_FSCmdParser> kCmds_Parsers;
 
+private:
 	static t_FSOp Parse_OP_format(std::istream &args);
 	static t_FSOp Parse_OP_load(std::istream &args);
 
@@ -34,4 +35,11 @@ private:
 
 	static t_FSOp Parse_OP_incp(std::istream &args);
 	static t_FSOp Parse_OP_outcp(std::istream &args);
+
+private:
+	inline static const std::string kDot = ".";
+	inline static const std::string kDot_Dot = "..";
+
+	static void Assert_Path_Not_Dot_Ddot(const std::filesystem::path &path);
+
 };

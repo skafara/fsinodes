@@ -16,7 +16,8 @@ enum class FSMessages {
 	kPathNotFound,
 	kFileNotFound,
 	kNotEmpty,
-	kCannotCreateFile
+	kCannotCreateFile,
+	kExist
 };
 
 const std::unordered_map<FSMessages, const std::string> FSMessages_Strings{
@@ -24,23 +25,41 @@ const std::unordered_map<FSMessages, const std::string> FSMessages_Strings{
 	{FSMessages::kPathNotFound, "PATH NOT FOUND"},
 	{FSMessages::kFileNotFound, "FILE NOT FOUND"},
 	{FSMessages::kNotEmpty, "NOT EMPTY"},
-	{FSMessages::kCannotCreateFile, "CANNOT CREATE FILE"}
+	{FSMessages::kCannotCreateFile, "CANNOT CREATE FILE"},
+	{FSMessages::kExist, "EXIST"}
 };
 
-const char *FSMessage_String(FSMessages message);
+const std::string &Get_FSMessage_String(FSMessages message);
 
-class PathNotFoundException : public std::exception {
+class FSException : public std::runtime_error {
 public:
-	const char* what() const noexcept override {
-		return FSMessage_String(FSMessages::kPathNotFound);
+	explicit FSException(const std::string &msg) : std::runtime_error(msg) {
+		//
+	}
+	explicit FSException(FSMessages msg) : std::runtime_error(Get_FSMessage_String(msg)) {
+		//
 	}
 };
 
-constexpr uint32_t kIdx_None = -1;using t_DataBlockAcquirer = std::function<uint32_t ()>;
+class PathNotFoundException : public FSException {
+public:
+	explicit PathNotFoundException() : FSException(FSMessages::kPathNotFound) {
+		//
+	}
+};
+
+/*class NotFormattedException : public FSException {
+public:
+	explicit NotFormattedException() : FSException() {
+		//
+	}
+};*/
+
+using t_DataBlockAcquirer = std::function<uint32_t ()>;
 
 class FileSystem : public I_FSOps {
 public:
-	FileSystem(std::string fs_path, std::ostream &out_stream);
+	FileSystem(const std::string &fs_path, std::ostream &out_stream);
 
 	FileSystem(const FileSystem &) = delete;
 	FileSystem &operator=(const FileSystem &) = delete;
@@ -68,17 +87,17 @@ public:
 	void OP_outcp(const std::string &path1, const std::string &path2) override;
 
 private:
-	static constexpr uint32_t Superblock_Offset = 0;
+	static constexpr uint32_t kSuperblock_Offset = 0;
 
-	inline static const std::string Root_Dir_Path = "/";
-	static constexpr uint32_t Root_Dir_Inode_Idx = 0;
-	static constexpr uint32_t Root_Dir_DBlock_Idx = 0;
+	inline static const std::string kRoot_Dir_Path = "/";
+	static constexpr uint32_t kRoot_Dir_Inode_Idx = 0;
+	static constexpr uint32_t kRoot_Dir_DBlock_Idx = 0;
 
-	static constexpr char Path_Delimiter = '/';
-	inline static const std::string Dot = ".";
-	inline static const std::string Dot_Dot = "..";
+	static constexpr char kPath_Delimiter = '/';
+	inline static const std::string kDot = ".";
+	inline static const std::string kDot_Dot = "..";
 
-	const std::string _fs_path; // TODO necessary?
+	const std::string _fs_path;
 	std::ostream &_out_stream;
 	std::shared_ptr<I_FSContainer> _fs_container;
 
@@ -103,7 +122,11 @@ private:
 
 	uint32_t Acquire_Inode();
 
-	void Init_Components();
+	void Init_Structures();
 
 	void Print_Message(FSMessages message) const;
+
+	bool Is_Formatted() const;
+
+	void Assert_Is_Formatted() const;
 };

@@ -43,7 +43,7 @@ void MMappedFile::Read(t_Byte_Buf &buf, size_t idx, size_t len) const {
 		throw -1;
 	}
 
-	buf.reserve(len);
+	buf.reserve(buf.size() + len);
 	for (size_t i = 0; i < len; ++i) {
 		buf.push_back(_data[idx + i]);
 	}
@@ -62,7 +62,7 @@ void MMappedFile::Write(const t_Byte_Buf &buf, size_t idx, size_t len) {
 void MMappedFile::Open() {
 	_fd = open(_path.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 	if (_fd == -1) {
-		throw std::ios_base::failure{"Cannot open/create file '" + _path + "'."};
+		throw std::ios_base::failure{"Cannot Open/Create File '" + _path + "'."};
 	}
 	_size = std::filesystem::file_size(_path);
 }
@@ -81,7 +81,7 @@ void MMappedFile::Map() {
 
 	_data = static_cast<std::byte *>(mmap(nullptr, Get_Size(), PROT_READ | PROT_WRITE, MAP_SHARED, _fd, 0));
 	if (_data == MAP_FAILED) {
-		throw std::ios_base::failure{"Cannot map file '" + _path + "'."};
+		throw std::ios_base::failure{"Cannot Map File '" + _path + "'."};
 	}
 }
 
@@ -91,6 +91,6 @@ void MMappedFile::Unmap() {
 	}
 
 	if (munmap(_data, Get_Size()) == -1) {
-		throw std::ios_base::failure{"Cannot unmap file '" + _path + "'."};
+		throw std::ios_base::failure{"Cannot Unmap File '" + _path + "'."};
 	}
 }

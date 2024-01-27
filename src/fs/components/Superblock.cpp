@@ -7,7 +7,7 @@ Superblock::Superblock(const std::shared_ptr<I_ReadableWritable> &sb_data, size_
 	//
 }
 
-void Superblock::Set(t_Superblock &superblock) {
+void Superblock::Set(const t_Superblock &superblock) {
 	Write(0, superblock);
 }
 
