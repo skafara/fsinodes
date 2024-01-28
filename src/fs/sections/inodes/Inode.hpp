@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "../../container/io/A_OffsetReadableWritable.hpp"
+#include "../data/Data.hpp"
 
 
 class Inode : public A_OffsetReadableWritable {
@@ -40,6 +40,13 @@ public:
 	Inode &Unset_Directs_Indirects();
 
 	// emmpty dir, file?
+
+/*public:
+	Iterator_DataBlocks begin_dblocks(const std::shared_ptr<Data> &data);
+	static Iterator_DataBlocks end_dblocks();
+
+	Iterator_DirItems begin_diritems(const std::shared_ptr<Data> &data);
+	static Iterator_DirItems end_diritems();*/
 
 private:
 #pragma pack(push, 1)

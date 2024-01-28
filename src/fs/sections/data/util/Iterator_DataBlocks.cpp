@@ -3,86 +3,77 @@
 
 Iterator_DataBlocks::Iterator_DataBlocks(Inode &inode, const std::shared_ptr<Data> &data) :
 	_inode(inode), _data(data) {
-	_dblock_idx = _inode.Get_Direct(0);
-	if (_dblock_idx == -1) {
+	_direct_ref = _inode.Get_Direct(0);
+	if (_direct_ref == Inode::kDirect_Ref_Unset) {
 		Is_Depleted = true;
 	}
 }
 
-Iterator_DataBlocks Iterator_DataBlocks::begin() const {
-	return {_inode, _data};
-}
-
-Iterator_DataBlocks Iterator_DataBlocks::end() const {
-	Iterator_DataBlocks it{_inode, _data};
-	it.Is_Depleted = true;
-	it._dblock_idx = -1;
-	return it;
-}
-
 DataBlock Iterator_DataBlocks::operator*() {
-	return _data->Get(_dblock_idx);
+	return _data->Get(_direct_ref);
 }
 
 Iterator_DataBlocks &Iterator_DataBlocks::operator++() {
 	it_direct_no++;
 	if (it_directs) {
-		if (it_direct_no >= 5) {
+		if (it_direct_no >= Inode::kDirect_Refs_Cnt) {
 			it_directs = false;
 			it_indirect1 = true;
 			it_direct_no = 0;
-		} else {
-			_dblock_idx = _inode.Get_Direct(it_direct_no);
-			if (_dblock_idx == -1) {
+		}
+		else {
+			_direct_ref = _inode.Get_Direct(it_direct_no);
+			if (_direct_ref == Inode::kDirect_Ref_Unset) {
 				Is_Depleted = true;
 				return *this;
 			}
 		}
 	}
 	if (it_indirect1) {
-		_dblock_idx = _inode.Get_Indirect1();
-		if (_dblock_idx == -1) {
+		_direct_ref = _inode.Get_Indirect1();
+		if (_direct_ref == Inode::kIndirect_Ref_Unset) {
 			Is_Depleted = true;
 			return *this;
 		}
 
-		if (it_direct_no >= 1024 / sizeof(uint32_t)) {
+		if (it_direct_no >= DataBlock::kSize / sizeof(uint32_t)) {
 			it_indirect1 = false;
 			it_indirect2 = true;
 			it_indirect1_no = 0;
 			it_direct_no = 0;
-		} else {
-			_dblock_idx = _data->Get(_dblock_idx).Get_Data_Block_Idx(it_direct_no);
-			if (_dblock_idx == 0) {
+		}
+		else {
+			_direct_ref = _data->Get(_direct_ref).Get_Data_Block_Idx(it_direct_no);
+			if (_direct_ref == Inode::kIndirect_Ref_Unset) {
 				Is_Depleted = true;
 				return *this;
 			}
 		}
 	}
 	if (it_indirect2) {
-		_dblock_idx = _inode.Get_Indirect2();
-		if (_dblock_idx == -1) {
+		_direct_ref = _inode.Get_Indirect2();
+		if (_direct_ref == Inode::kIndirect_Ref_Unset) {
 			Is_Depleted = true;
 			return *this;
 		}
 
-		if (it_direct_no >= 1024 / sizeof(uint32_t)) {
+		if (it_direct_no >= DataBlock::kSize / sizeof(uint32_t)) {
 			it_indirect1_no++;
 			it_direct_no = 0;
 		}
-		if (it_indirect1_no >= 1024 / sizeof(uint32_t)) {
+		if (it_indirect1_no >= DataBlock::kSize / sizeof(uint32_t)) {
 			Is_Depleted = true;
 			return *this;
 		}
 
 		const uint32_t dblock_indirect1_idx = _data->Get(_inode.Get_Indirect2()).Get_Data_Block_Idx(it_indirect1_no);
-		if (dblock_indirect1_idx == 0) {
+		if (dblock_indirect1_idx == Inode::kIndirect_Ref_Unset) {
 			Is_Depleted = true;
 			return *this;
 		}
 
-		_dblock_idx = _data->Get(dblock_indirect1_idx).Get_Data_Block_Idx(it_direct_no);
-		if (_dblock_idx == 0) {
+		_direct_ref = _data->Get(dblock_indirect1_idx).Get_Data_Block_Idx(it_direct_no);
+		if (_direct_ref == Inode::kIndirect_Ref_Unset) {
 			Is_Depleted = true;
 			return *this;
 		}
@@ -92,96 +83,102 @@ Iterator_DataBlocks &Iterator_DataBlocks::operator++() {
 }
 
 bool Iterator_DataBlocks::operator==(const Iterator_DataBlocks &other) const {
-	return (this->Is_Depleted && other.Is_Depleted) || (this->_dblock_idx == other._dblock_idx); // ?
+	return (this->Is_Depleted && other.Is_Depleted) || (this->_direct_ref == other._direct_ref); // ?
+}
+
+bool Iterator_DataBlocks::operator==(bool other) const {
+	return Is_Depleted != other;
 }
 
 bool Iterator_DataBlocks::operator!=(const Iterator_DataBlocks &other) const {
 	return !(*this == other);
 }
 
-Iterator_DataBlocks Iterator_DataBlocks::Append_Data_Block(const t_DataBlockAcquirer& dblock_acquirer) {
-	for (; *this != end(); ++(*this));
+bool Iterator_DataBlocks::operator!=(bool other) const {
+	return !(*this == other);
+}
 
-	_dblock_idx = dblock_acquirer();
-	Is_Depleted = false; // spis nahoru? a nebo zmenit end
+Iterator_DataBlocks Iterator_DataBlocks::Append(const t_DataBlockAcquirer& acquirer) {
+	for (; *this != kDepleted; ++(*this));
+	Is_Depleted = false;
+
+	_direct_ref = acquirer();
 
 	if (it_directs) {
-		_inode.Set_Direct(it_direct_no, _dblock_idx);
+		_inode.Set_Direct(it_direct_no, _direct_ref);
 	}
 	if (it_indirect1) {
-		if (_inode.Get_Indirect1() == -1) {
-			_inode.Set_Indirect1(_dblock_idx);
-			_dblock_idx = dblock_acquirer();
+		if (_inode.Get_Indirect1() == Inode::kIndirect_Ref_Unset) {
+			_inode.Set_Indirect1(_direct_ref);
+			_direct_ref = acquirer();
 		}
 
-		_data->Get(_inode.Get_Indirect1()).Set_Data_Block_Idx(it_direct_no, _dblock_idx);
+		_data->Get(_inode.Get_Indirect1()).Set_Data_Block_Idx(it_direct_no, _direct_ref);
 	}
 	if (it_indirect2) {
-		if (_inode.Get_Indirect2() == -1) {
-			_inode.Set_Indirect2(_dblock_idx);
-			_dblock_idx = dblock_acquirer();
+		if (_inode.Get_Indirect2() == Inode::kIndirect_Ref_Unset) {
+			_inode.Set_Indirect2(_direct_ref);
+			_direct_ref = acquirer();
 		}
 
 		DataBlock dblock_indirect2 = _data->Get(_inode.Get_Indirect2());
-		if (dblock_indirect2.Get_Data_Block_Idx(it_indirect1_no) == 0) {
-			dblock_indirect2.Set_Data_Block_Idx(it_indirect1_no, _dblock_idx);
-			_dblock_idx = dblock_acquirer();
+		if (dblock_indirect2.Get_Data_Block_Idx(it_indirect1_no) == Inode::kIndirect_Ref_Unset) {
+			dblock_indirect2.Set_Data_Block_Idx(it_indirect1_no, _direct_ref);
+			_direct_ref = acquirer();
 		}
 
 		DataBlock dblock_indirect1 = _data->Get(dblock_indirect2.Get_Data_Block_Idx(it_indirect1_no));
-		dblock_indirect1.Set_Data_Block_Idx(it_direct_no, _dblock_idx);
+		dblock_indirect1.Set_Data_Block_Idx(it_direct_no, _direct_ref);
 	}
 
 	return *this;
 }
 
-Iterator_DataBlocks Iterator_DataBlocks::Release_Data_Blocks(const t_DataBlockReleaser &dblock_releaser) {
-	if (_inode.Get_Indirect2() != -1) {
-		DataBlock dblock_indirect2 = _data->Get(_inode.Get_Indirect2());
+void Iterator_DataBlocks::Release_All(Inode &inode, const std::shared_ptr<Data> &data, const t_DataBlockReleaser &releaser) {
+	if (inode.Get_Indirect2() != Inode::kIndirect_Ref_Unset) {
+		DataBlock dblock_indirect2 = data->Get(inode.Get_Indirect2());
 		for (uint32_t i = 0; i < DataBlock::kSize / sizeof(uint32_t); ++i) {
 			const uint32_t indirect1 = dblock_indirect2.Get_Data_Block_Idx(i);
-			if (indirect1 == -1) {
+			if (indirect1 == Inode::kIndirect_Ref_Unset) {
 				break;
 			}
 
-			DataBlock dblock_indirect1 = _data->Get(indirect1);
+			DataBlock dblock_indirect1 = data->Get(indirect1);
 			for (uint32_t j = 0; j < DataBlock::kSize / sizeof(uint32_t); ++j) {
 				const uint32_t direct = dblock_indirect1.Get_Data_Block_Idx(j);
-				if (direct == -1) {
+				if (direct == Inode::kIndirect_Ref_Unset) {
 					break;
 				}
 
-				dblock_releaser(direct);
+				releaser(direct);
 			}
 
-			dblock_releaser(indirect1);
+			releaser(indirect1);
 		}
 
-		dblock_releaser(_inode.Get_Indirect2());
+		releaser(inode.Get_Indirect2());
 	}
 
-	if (_inode.Get_Indirect1() != -1) {
-		DataBlock dblock_indirect1 = _data->Get(_inode.Get_Indirect1());
+	if (inode.Get_Indirect1() != Inode::kIndirect_Ref_Unset) {
+		DataBlock dblock_indirect1 = data->Get(inode.Get_Indirect1());
 		for (uint32_t i = 0; i < DataBlock::kSize / sizeof(uint32_t); ++i) {
 			const uint32_t direct = dblock_indirect1.Get_Data_Block_Idx(i);
-			if (direct == -1) {
+			if (direct == Inode::kIndirect_Ref_Unset) {
 				break;
 			}
 
-			dblock_releaser(direct);
+			releaser(direct);
 		}
 
-		dblock_releaser(_inode.Get_Indirect1());
+		releaser(inode.Get_Indirect1());
 	}
 
-	for (uint32_t i = 0; i < 5; ++i) {
-		const uint32_t direct = _inode.Get_Direct(i);
-		if (direct == -1) {
+	for (uint32_t i = 0; i < Inode::kDirect_Refs_Cnt; ++i) {
+		const uint32_t direct = inode.Get_Direct(i);
+		if (direct == Inode::kDirect_Ref_Unset) {
 			break;
 		}
 
-		dblock_releaser(direct);
+		releaser(direct);
 	}
-
-	return {_inode, _data};
 }

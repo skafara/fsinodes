@@ -1,33 +1,29 @@
 #pragma once
 
-#include "../../inodes/Inode.hpp"
-#include "../DataBlock.hpp"
-#include "../Data.hpp"
 #include "Iterator_DataBlocks.hpp"
 
 
 class Iterator_DirItems {
 public:
-	Iterator_DirItems(Inode &inode, const std::shared_ptr<Data> &data);
+	static constexpr bool kDepleted = false;
 
-	Iterator_DirItems begin() const;
-	Iterator_DirItems end() const;
+	Iterator_DirItems(Inode &inode, const std::shared_ptr<Data> &data);
 
 	DataBlock::t_DirItem operator*();
 	Iterator_DirItems& operator++();
 
 	bool operator==(const Iterator_DirItems& other) const;
+	bool operator==(bool other) const;
 	bool operator!=(const Iterator_DirItems& other) const;
+	bool operator!=(bool other) const;
 
-	Iterator_DirItems Append_Dir_Item(uint32_t inode_idx, const std::string &item_name);
-	Iterator_DirItems Remove_Dir_Item();
+	Iterator_DirItems Append(uint32_t inode_idx, const std::string &item_name);
+	Iterator_DirItems Remove();
 
 private:
-	Inode &_inode;
-	const std::shared_ptr<Data> _data;
-
 	Iterator_DataBlocks _it_dblocks;
-	uint32_t _it_dir_item_idx = 0;
 
+	uint32_t _it_dir_item_no = 0;
 	bool Is_Depleted = false;
+
 };

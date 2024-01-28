@@ -48,16 +48,6 @@ public:
 	}
 };
 
-/*class NotFormattedException : public FSException {
-public:
-	explicit NotFormattedException() : FSException() {
-		//
-	}
-};*/
-
-using t_DataBlockAcquirer = std::function<uint32_t ()>;
-using t_DataBlockReleaser = std::function<void (uint32_t)>;
-
 class FileSystem : public I_FSOps {
 public:
 	FileSystem(const std::string &fs_path, std::ostream &out_stream);
@@ -65,6 +55,7 @@ public:
 	FileSystem(const FileSystem &) = delete;
 	FileSystem &operator=(const FileSystem &) = delete;
 
+public:
 	void OP_format(uint32_t size) override;
 	void OP_load(const std::string &path) override;
 
@@ -111,6 +102,8 @@ private:
 	std::filesystem::path _work_dir_path;
 	uint32_t _work_dir_inode_idx;
 
+	static uint32_t Get_Necessary_Data_Blocks_Cnt(size_t filesize);
+
 	static Superblock::t_Superblock Get_Formatted_Superblock(size_t fs_size);
 	static std::filesystem::path Get_Cannonical_Path(const std::filesystem::path &path);
 
@@ -119,7 +112,6 @@ private:
 
 	//std::vector<uint32_t> Reserve_Data_Blocks(uint32_t cnt);
 	uint32_t Acquire_Data_Block();
-	t_DataBlockAcquirer Data_Block_Acquirer = [this] { return Acquire_Data_Block(); };
 
 	uint32_t Acquire_Inode();
 
@@ -130,4 +122,5 @@ private:
 	bool Is_Formatted() const;
 
 	void Assert_Is_Formatted() const;
+	void Assert_Has_Resources(const Bitmap &bitmap, uint32_t cnt);
 };

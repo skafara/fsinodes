@@ -3,12 +3,13 @@
 #include <vector>
 
 
-using t_Byte_Buf = std::vector<std::byte>;
-
 class I_ReadableWritable {
 public:
+	using t_Byte_Buf = std::vector<std::byte>;
+
 	virtual ~I_ReadableWritable() = default;
 
+public:
 	template<typename T>
 	T Read(size_t idx) const;
 	template<typename T>

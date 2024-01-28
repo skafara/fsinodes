@@ -13,6 +13,7 @@ public:
 	MMappedFile(const MMappedFile &) = delete;
 	MMappedFile &operator=(const MMappedFile &) = delete;
 
+public:
 	size_t Get_Size() const override;
 	void Resize(size_t size) override;
 
@@ -28,7 +29,9 @@ private:
 	void Map();
 	void Unmap();
 
+private:
 	const std::string _path;
+
 	int _fd;
 	std::byte *_data;
 	uint32_t _size;

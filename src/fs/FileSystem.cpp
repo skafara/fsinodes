@@ -49,8 +49,8 @@ void FileSystem::OP_format(uint32_t size) {
 	_bm_data->Set(kRoot_Dir_DBlock_Idx, true);
 	DataBlock root_dir_dblock = _data->Get(kRoot_Dir_DBlock_Idx);
 	Iterator_DirItems it_root_dir_items{root_dir_inode, _data};
-	it_root_dir_items.Append_Dir_Item(kRoot_Dir_Inode_Idx, kDot);
-	it_root_dir_items.Append_Dir_Item(kRoot_Dir_Inode_Idx, kDot_Dot);
+	it_root_dir_items.Append(kRoot_Dir_Inode_Idx, kDot);
+	it_root_dir_items.Append(kRoot_Dir_Inode_Idx, kDot_Dot);
 
 	Print_Message(FSMessages::kOk);
 }
@@ -132,6 +132,9 @@ void FileSystem::OP_cp(const std::string &path1, const std::string &path2) {
 		throw PathNotFoundException{};
 	}
 
+	Assert_Has_Resources(*_bm_inodes, 1);
+	Assert_Has_Resources(*_bm_data, Get_Necessary_Data_Blocks_Cnt(src_inode.Get_File_Size()));
+
 	const uint32_t dst_inode_idx = Acquire_Inode();
 	Inode dst_inode = _inodes->Get(dst_inode_idx);
 	dst_inode
@@ -142,10 +145,12 @@ void FileSystem::OP_cp(const std::string &path1, const std::string &path2) {
 
 	Iterator_DataBlocks it_src{src_inode, _data};
 	Iterator_DataBlocks it_dst{dst_inode, _data};
-	t_Byte_Buf buf;
+	I_ReadableWritable::t_Byte_Buf buf;
 	buf.reserve(DataBlock::kSize);
 	for (uint32_t left = src_inode.Get_File_Size(); left > 0; ++it_src) {
-		it_dst.Append_Data_Block(Data_Block_Acquirer);
+		it_dst.Append([this] () {
+			return Acquire_Data_Block();
+		});
 		if (left >= DataBlock::kSize) {
 			(*it_src).Get_Content(buf);
 			(*it_dst).Set_Content(buf);
@@ -161,7 +166,7 @@ void FileSystem::OP_cp(const std::string &path1, const std::string &path2) {
 	}
 
 	Iterator_DirItems it_dst_dir_items{dst_dir_inode, _data};
-	it_dst_dir_items.Append_Dir_Item(dst_inode_idx, dst_filename);
+	it_dst_dir_items.Append(dst_inode_idx, dst_filename);
 
 	Print_Message(FSMessages::kOk);
 }
@@ -201,11 +206,11 @@ void FileSystem::OP_mv(const std::string &path1, const std::string &path2) {
 	}
 
 	Iterator_DirItems it_dst_dir_items{dst_dir_inode, _data};
-	it_dst_dir_items.Append_Dir_Item(src_inode_idx, dst_filename);
+	it_dst_dir_items.Append(src_inode_idx, dst_filename);
 
 	Iterator_DirItems it_src_dir_items{src_dir_inode, _data};
 	for (; (*it_src_dir_items).Inode_Idx != src_inode_idx; ++it_src_dir_items);
-	it_src_dir_items.Remove_Dir_Item();
+	it_src_dir_items.Remove();
 
 	Print_Message(FSMessages::kOk);
 }
@@ -224,9 +229,9 @@ void FileSystem::OP_rm(const std::string &path) {
 		Inode dir_inode = _inodes->Get(dir_inode_idx);
 
 		// release dblocks
-		Iterator_DataBlocks it_dblocks{inode, _data};
-		it_dblocks.Release_Data_Blocks([this] (uint32_t inode_idx) {
-			_bm_data->Set(inode_idx, false);
+		Iterator_DataBlocks::Release_All(inode, _data, [this] (uint32_t dblock_idx) {
+			_data->Get(dblock_idx).Empty_Content();
+			_bm_data->Set(dblock_idx, false);
 		});
 
 		// release inode
@@ -234,7 +239,7 @@ void FileSystem::OP_rm(const std::string &path) {
 
 		Iterator_DirItems it_dir_items{dir_inode, _data};
 		for (; (*it_dir_items).Inode_Idx != inode_idx; ++it_dir_items);
-		it_dir_items.Remove_Dir_Item();
+		it_dir_items.Remove();
 
 		Print_Message(FSMessages::kOk);
 	}
@@ -274,11 +279,11 @@ void FileSystem::OP_mkdir(const std::string &path) {
 		.Set_Direct(0, dir_dblock_idx);
 
 	Iterator_DirItems it_dir_items{dir_inode, _data};
-	it_dir_items.Append_Dir_Item(dir_inode_idx, kDot);
-	it_dir_items.Append_Dir_Item(parent_inode_idx, kDot_Dot);
+	it_dir_items.Append(dir_inode_idx, kDot);
+	it_dir_items.Append(parent_inode_idx, kDot_Dot);
 
 	Iterator_DirItems it_parent_dir{parent_inode, _data};
-	it_parent_dir.Append_Dir_Item(dir_inode_idx, dir_name);
+	it_parent_dir.Append(dir_inode_idx, dir_name);
 
 	Print_Message(FSMessages::kOk);
 }
@@ -293,7 +298,7 @@ void FileSystem::OP_rmdir(const std::string &path) {
 
 		bool found = false;
 		Iterator_DirItems it_parent_dir_items{parent_inode, _data};
-		for (; it_parent_dir_items != it_parent_dir_items.end(); ++it_parent_dir_items) {
+		for (; it_parent_dir_items != Iterator_DirItems::kDepleted; ++it_parent_dir_items) {
 			if ((*it_parent_dir_items).Item_Name == dir_name) {
 				found = true;
 				break;
@@ -312,11 +317,11 @@ void FileSystem::OP_rmdir(const std::string &path) {
 		Iterator_DirItems it_dir_items{dir_inode, _data};
 		++it_dir_items;
 		++it_dir_items;
-		if (it_dir_items != it_dir_items.end()) {
+		if (it_dir_items != Iterator_DirItems::kDepleted) {
 			throw FSException{FSMessages::kNotEmpty};
 		}
 
-		it_parent_dir_items.Remove_Dir_Item();
+		it_parent_dir_items.Remove();
 
 		// release
 		_bm_inodes->Set(dir_inode_idx, false);
@@ -337,7 +342,7 @@ void FileSystem::OP_ls(const std::string &path) const {
 		throw PathNotFoundException{};
 	}
 
-	for (Iterator_DirItems it{inode, _data}; it != it.end(); ++it) {
+	for (Iterator_DirItems it{inode, _data}; it != Iterator_DirItems::kDepleted; ++it) {
 		DataBlock::t_DirItem dir_item = *it;
 
 		if (_inodes->Get(dir_item.Inode_Idx).Get_Is_Dir()) {
@@ -359,7 +364,7 @@ void FileSystem::OP_cat(const std::string &path) const {
 			throw PathNotFoundException{};
 		}
 
-		t_Byte_Buf buf;
+		I_ReadableWritable::t_Byte_Buf buf;
 		buf.reserve(DataBlock::kSize);
 		Iterator_DataBlocks it_dblocks{inode, _data};
 		for (uint32_t left = inode.Get_File_Size(); left > 0; ++it_dblocks) {
@@ -442,7 +447,6 @@ void FileSystem::OP_incp(const std::string &path1, const std::string &path2) {
 
 	std::ifstream ifstream{path1, std::ios::in | std::ios::binary};
 	const uint32_t file_size = std::filesystem::file_size(path1);
-	const uint32_t dblocks_cnt = std::ceil(file_size / static_cast<double>(1024)); // TODO dopocet s indirect1 a 2 a test jestli jich je dost a test jestli mam volny inode
 
 	uint32_t dir_inode_idx;
 	std::string dst_filename;
@@ -466,20 +470,25 @@ void FileSystem::OP_incp(const std::string &path1, const std::string &path2) {
 		throw PathNotFoundException{};
 	}
 
+	Assert_Has_Resources(*_bm_inodes, 1);
+	Assert_Has_Resources(*_bm_data, Get_Necessary_Data_Blocks_Cnt(file_size));
+
 	const uint32_t inode_idx = Acquire_Inode();
 	Inode inode = _inodes->Get(inode_idx);
 	inode.Set_Is_Dir(false).Set_Refs_Cnt(1).Set_File_Size(file_size).Unset_Directs_Indirects();
 
 	Iterator_DataBlocks it_dblocks{inode, _data};
-	t_Byte_Buf buf;
+	I_ReadableWritable::t_Byte_Buf buf;
 	buf.resize(DataBlock::kSize);
 	for (; ifstream.read(reinterpret_cast<char *>(buf.data()), DataBlock::kSize).gcount() > 0; ) {
-		it_dblocks.Append_Data_Block(Data_Block_Acquirer);
+		it_dblocks.Append([this] () {
+			return Acquire_Data_Block();
+		});
 		(*it_dblocks).Set_Content(buf, ifstream.gcount());
 	}
 
 	Iterator_DirItems it_dir_items{dir_inode, _data};
-	it_dir_items.Append_Dir_Item(inode_idx, dst_filename);
+	it_dir_items.Append(inode_idx, dst_filename);
 
 	Print_Message(FSMessages::kOk);
 }
@@ -503,7 +512,7 @@ void FileSystem::OP_outcp(const std::string &path1, const std::string &path2) {
 			throw FSException{FSMessages::kPathNotFound};
 		}
 
-		t_Byte_Buf buf;
+		I_ReadableWritable::t_Byte_Buf buf;
 		buf.reserve(DataBlock::kSize);
 		Iterator_DataBlocks it_dblocks{inode, _data};
 		for (uint32_t left = inode.Get_File_Size(); left > 0; ++it_dblocks) {
@@ -552,7 +561,7 @@ uint32_t FileSystem::Resolve_Path(const std::string &path) const {
 
 		Inode inode = _inodes->Get(inode_idx);
 		bool found = false;
-		for (Iterator_DirItems it{inode, _data}; it != it.end(); ++it) {
+		for (Iterator_DirItems it{inode, _data}; it != Iterator_DirItems::kDepleted; ++it) {
 			DataBlock::t_DirItem dir_item = *it;
 
 			if (dir_item.Item_Name == filename) {
@@ -607,8 +616,8 @@ Superblock::t_Superblock FileSystem::Get_Formatted_Superblock(size_t fs_size) {
 
 void FileSystem::Init_Structures() {
 	_superblock = std::make_unique<Superblock>(_fs_container, kSuperblock_Offset);
-	_bm_inodes = std::make_unique<Bitmap>(_fs_container, _superblock->Get_BMap_Inodes_Start_Addr());
-	_bm_data = std::make_unique<Bitmap>(_fs_container, _superblock->Get_BMap_Data_Start_Addr());
+	_bm_inodes = std::make_unique<Bitmap>(_fs_container, _superblock->Get_BMap_Inodes_Start_Addr(), _superblock->Get_Inodes_Cnt() / 8);
+	_bm_data = std::make_unique<Bitmap>(_fs_container, _superblock->Get_BMap_Data_Start_Addr(), _superblock->Get_Data_Blocks_Cnt() / 8);
 	_inodes = std::make_unique<Inodes>(_fs_container, _superblock->Get_Inodes_Start_Addr());
 	_data = std::make_shared<Data>(_fs_container, _superblock->Get_Data_Start_Addr());
 }
@@ -642,61 +651,23 @@ std::filesystem::path FileSystem::Get_Cannonical_Path(const std::filesystem::pat
 	return result;
 }
 
-/*std::vector<uint32_t> FileSystem::Reserve_Data_Blocks(uint32_t cnt) {
-	std::vector<uint32_t> dblocks_idxs{};
-	for (uint32_t i = 0, j = 0; i < cnt && j < 8 * (_superblock->Get_Inodes_Start_Addr() - _superblock->Get_BMap_Data_Start_Addr()); ++j) {
-		if (_bm_data->Is_Set(j)) {
-			continue;
-		}
-
-		dblocks_idxs.push_back(j);
-		++i;
-	}
-
-	if (dblocks_idxs.size() < cnt) {
-		throw -1;
-	}
-
-	return dblocks_idxs;
-}*/
-
 uint32_t FileSystem::Acquire_Data_Block() {
-	uint32_t dblock_idx = 0;
-	//std::cout << 8 * (_superblock->Get_Inodes_Start_Addr() - _superblock->Get_BMap_Data_Start_Addr()) << std::endl;
-	for (uint32_t i = 0; i < 1048328; ++i) {
-		if (_bm_data->Is_Set(i)) {
-			continue;
-		}
+	uint32_t dblock_idx;
+	_bm_data->Process_Free(1, [this, &dblock_idx] (uint32_t idx) {
+		dblock_idx = idx;
+		_bm_data->Set(idx, true);
+	});
 
-		dblock_idx = i;
-		break;
-	}
-
-	if (dblock_idx == 0) {
-		std::cout << "dblock 0" << std::endl;
-		throw -1;
-	}
-
-	_bm_data->Set(dblock_idx, true);
 	return dblock_idx;
 }
 
 uint32_t FileSystem::Acquire_Inode() {
-	uint32_t inode_idx = 0;
-	for (uint32_t i = 0; i < 8 * (_superblock->Get_BMap_Data_Start_Addr() - _superblock->Get_BMap_Inodes_Start_Addr()); ++i) {
-		if (_bm_inodes->Is_Set(i)) {
-			continue;
-		}
+	uint32_t inode_idx;
+	_bm_inodes->Process_Free(1, [this, &inode_idx] (uint32_t idx) {
+		inode_idx = idx;
+		_bm_inodes->Set(idx, true);
+	});
 
-		inode_idx = i;
-		break;
-	}
-
-	if (inode_idx == 0) {
-		throw -1;
-	}
-
-	_bm_inodes->Set(inode_idx, true);
 	return inode_idx;
 }
 
@@ -711,5 +682,24 @@ bool FileSystem::Is_Formatted() const {
 void FileSystem::Assert_Is_Formatted() const {
 	if (!Is_Formatted()) {
 		throw FSException{"Filesystem Not Formatted"};
+	}
+}
+
+uint32_t FileSystem::Get_Necessary_Data_Blocks_Cnt(size_t filesize) {
+	uint32_t cnt = 0;
+	size_t acquired = 0;
+	for (uint32_t i = 0; i < Inode::kDirect_Refs_Cnt && acquired < filesize; ++i, ++cnt, acquired += DataBlock::kSize);
+	if (acquired < filesize) ++cnt;
+	for (uint32_t i = 0; i < DataBlock::kSize / sizeof(uint32_t) && acquired < filesize; ++i, ++cnt, acquired += DataBlock::kSize);
+	if (acquired < filesize) ++cnt;
+	for (uint32_t i = 0; i < DataBlock::kSize / sizeof(uint32_t) && acquired < filesize; ++i, ++cnt) {
+		for (uint32_t j = 0; j < DataBlock::kSize / sizeof(uint32_t) && acquired < filesize; ++j, ++cnt, acquired += DataBlock::kSize);
+	}
+	return cnt;
+}
+
+void FileSystem::Assert_Has_Resources(const Bitmap &bitmap, uint32_t cnt) {
+	if (!bitmap.Has_Free(cnt)) {
+		throw FSException{"Filesystem Resources Depleted"};
 	}
 }

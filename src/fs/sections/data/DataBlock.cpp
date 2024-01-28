@@ -1,6 +1,12 @@
 #include "DataBlock.hpp"
 
 
+const I_ReadableWritable::t_Byte_Buf DataBlock::kEmpty_Buf = [] () {
+	I_ReadableWritable::t_Byte_Buf buf;
+	buf.resize(kSize);
+	return buf;
+}();
+
 DataBlock::DataBlock(const std::shared_ptr<I_ReadableWritable> &dblock_data, size_t offset) :
 		A_OffsetReadableWritable(dblock_data, offset) {
 	//
@@ -12,6 +18,10 @@ void DataBlock::Get_Content(t_Byte_Buf &buf, uint32_t lim) const {
 
 void DataBlock::Set_Content(const t_Byte_Buf &buf, uint32_t lim) {
 	Write(buf, 0, lim);
+}
+
+void DataBlock::Empty_Content() {
+	Set_Content(kEmpty_Buf);
 }
 
 DataBlock::t_DirItem DataBlock::Get_Dir_Item(size_t idx) const {

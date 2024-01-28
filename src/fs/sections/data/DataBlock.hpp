@@ -19,12 +19,16 @@ public:
 
 	void Get_Content(t_Byte_Buf &buf, uint32_t lim = kSize) const;
 	void Set_Content(const t_Byte_Buf &buf, uint32_t lim = kSize);
+	void Empty_Content();
 
 	t_DirItem Get_Dir_Item(size_t idx) const;
 	void Set_Dir_Item(size_t idx, uint32_t item_inode_idx, const std::string &item_name); // nebo inode a char[]
 
 	uint32_t Get_Data_Block_Idx(uint32_t idx);
 	void Set_Data_Block_Idx(uint32_t idx, uint32_t dblock_idx);
+
+private:
+	static const t_Byte_Buf kEmpty_Buf;
 
 private:
 #pragma pack(push, 1)

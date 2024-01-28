@@ -68,3 +68,19 @@ Inode &Inode::Set_Indirect2(uint32_t indirect2) {
 	Write(offsetof(t_Inode, Indirect2), indirect2);
 	return *this;
 }
+
+/*Iterator_DataBlocks Inode::begin_dblocks(const std::shared_ptr<Data> &data) {
+	return {*this, data};
+}
+
+Iterator_DataBlocks Inode::end_dblocks() {
+	return Iterator_DataBlocks::kDepleted;
+}
+
+Iterator_DirItems Inode::begin_diritems(const std::shared_ptr<Data> &data) {
+	return {*this, data};
+}
+
+Iterator_DirItems Inode::end_diritems() {
+	return Iterator_DirItems::kDepleted;
+}*/

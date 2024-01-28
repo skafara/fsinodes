@@ -33,36 +33,40 @@ void MMappedFile::Resize(size_t size) {
 }
 
 void MMappedFile::Clear() {
-	for (uint32_t i = 0; i < Get_Size(); ++i) {
-		_data[i] = static_cast<std::byte>(0);
-	}
+	//std::memset(_data, 0, _size);
+	std::filesystem::resize_file(_path, 0);
+	std::filesystem::resize_file(_path, _size);
 }
 
 void MMappedFile::Read(t_Byte_Buf &buf, size_t idx, size_t len) const {
 	if (Get_Size() == 0) {
-		throw -1;
+		throw std::runtime_error{"Cannot Read From File '" + _path + "'"};
 	}
 
-	buf.reserve(buf.size() + len);
+	/*buf.reserve(buf.size() + len);
 	for (size_t i = 0; i < len; ++i) {
 		buf.push_back(_data[idx + i]);
-	}
+	}*/
+	const size_t old_size = buf.size();
+	buf.resize(old_size + len);
+	std::memcpy(buf.data() + old_size, _data + idx, len);
 }
 
 void MMappedFile::Write(const t_Byte_Buf &buf, size_t idx, size_t len) {
 	if (Get_Size() == 0) {
-		throw -1;
+		throw std::runtime_error{"Cannot Write To File '" + _path + "'"};
 	}
 
-	for (size_t i = 0; i < len; ++i) {
+	/*for (size_t i = 0; i < len; ++i) {
 		_data[idx + i] = buf[i];
-	}
+	}*/
+	std::memcpy(_data + idx, buf.data(), len);
 }
 
 void MMappedFile::Open() {
 	_fd = open(_path.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 	if (_fd == -1) {
-		throw std::ios_base::failure{"Cannot Open/Create File '" + _path + "'."};
+		throw std::runtime_error{"Cannot Open/Create File '" + _path + "'"};
 	}
 	_size = std::filesystem::file_size(_path);
 }
@@ -81,7 +85,7 @@ void MMappedFile::Map() {
 
 	_data = static_cast<std::byte *>(mmap(nullptr, Get_Size(), PROT_READ | PROT_WRITE, MAP_SHARED, _fd, 0));
 	if (_data == MAP_FAILED) {
-		throw std::ios_base::failure{"Cannot Map File '" + _path + "'."};
+		throw std::runtime_error{"Cannot Map File '" + _path + "'"};
 	}
 }
 
@@ -91,6 +95,6 @@ void MMappedFile::Unmap() {
 	}
 
 	if (munmap(_data, Get_Size()) == -1) {
-		throw std::ios_base::failure{"Cannot Unmap File '" + _path + "'."};
+		throw std::runtime_error{"Cannot Unmap File '" + _path + "'"};
 	}
 }
