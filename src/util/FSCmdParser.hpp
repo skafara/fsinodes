@@ -3,14 +3,23 @@
 #include "../fs/FileSystem.hpp"
 
 
-using t_FSOp = std::function<void (I_FSOps &)>;
-using t_FSCmdParser = std::function<t_FSOp (std::istream &)>;
-
 class FSCmdParser {
 public:
+	/**
+	 * FS Operation Type
+	 */
+	using t_FSOp = std::function<void (I_FSOps &)>;
+
+	/**
+	 * Parses a line
+	 * @param line Line
+	 * @return FS Operation
+	 */
 	static t_FSOp Parse(const std::string &line);
 
 private:
+	using t_FSCmdParser = std::function<t_FSOp (std::istream &)>;
+
 	static const std::unordered_map<std::string, const t_FSCmdParser> kCmds_Parsers;
 
 private:
@@ -35,6 +44,8 @@ private:
 
 	static t_FSOp Parse_OP_incp(std::istream &args);
 	static t_FSOp Parse_OP_outcp(std::istream &args);
+
+	static t_FSOp Parse_OP_slink(std::istream &args);
 
 private:
 	inline static const std::string kDot = ".";

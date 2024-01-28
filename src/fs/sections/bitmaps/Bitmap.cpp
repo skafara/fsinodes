@@ -3,8 +3,8 @@
 #include <utility>
 
 
-Bitmap::Bitmap(const std::shared_ptr<I_ReadableWritable> &bm_data, size_t offset, size_t words_cnt) :
-	A_OffsetReadableWritable(bm_data, offset), _words_cnt(words_cnt) {
+Bitmap::Bitmap(const std::shared_ptr<I_ReadableWritable> &container, size_t offset, size_t words_cnt) :
+		A_OffsetReadableWritable(container, offset), _words_cnt(words_cnt) {
 	//
 }
 

@@ -4,7 +4,7 @@
 #include "FSCmdParser.hpp"
 
 
-const std::unordered_map<std::string, const t_FSCmdParser> FSCmdParser::kCmds_Parsers{
+const std::unordered_map<std::string, const FSCmdParser::t_FSCmdParser> FSCmdParser::kCmds_Parsers{
 	{"format", Parse_OP_format},
 	{"load", Parse_OP_load},
 	{"cd", Parse_OP_cd},
@@ -24,10 +24,12 @@ const std::unordered_map<std::string, const t_FSCmdParser> FSCmdParser::kCmds_Pa
 	{"info", Parse_OP_info},
 
 	{"incp", Parse_OP_incp},
-	{"outcp", Parse_OP_outcp}
+	{"outcp", Parse_OP_outcp},
+
+	{"slink", Parse_OP_slink}
 };
 
-t_FSOp FSCmdParser::Parse(const std::string &line) {
+FSCmdParser::t_FSOp FSCmdParser::Parse(const std::string &line) {
 	std::istringstream cmd_isstream{line};
 	std::string cmd;
 
@@ -37,7 +39,7 @@ t_FSOp FSCmdParser::Parse(const std::string &line) {
 			const t_FSOp op = cmd_parser.second(cmd_isstream); // parse cmd, args, get fs op
 
 			std::string _;
-			if (!cmd_isstream || cmd_isstream >> _) { // invalid args or args left
+			if (!cmd_isstream || cmd_isstream >> _) { // invalid args or any args left
 				throw std::invalid_argument{"Invalid Command Format"};
 			}
 
@@ -48,7 +50,7 @@ t_FSOp FSCmdParser::Parse(const std::string &line) {
 	throw std::invalid_argument{"Command '" + cmd + "' does not exist."};
 }
 
-t_FSOp FSCmdParser::Parse_OP_format(std::istream &args) {
+FSCmdParser::t_FSOp FSCmdParser::Parse_OP_format(std::istream &args) {
 	const std::regex size_pattern("([1-9]\\d*)(KB|MB|GB)");
 	std::smatch match;
 
@@ -63,11 +65,13 @@ t_FSOp FSCmdParser::Parse_OP_format(std::istream &args) {
 	const std::string &unit = match[2].str();
 	uint32_t multiplier;
 	if (unit == "KB") {
-		multiplier = 1024;
-	} else if (unit == "MB") {
-		multiplier = 1048576;
-	} else {
-		multiplier = 1073741824;
+		multiplier = 1024; // 1K
+	}
+	else if (unit == "MB") {
+		multiplier = 1048576; // 1M
+	}
+	else {
+		multiplier = 1073741824; // 1G
 	}
 
 	const uint32_t size = number * multiplier;
@@ -76,7 +80,7 @@ t_FSOp FSCmdParser::Parse_OP_format(std::istream &args) {
 	};
 }
 
-t_FSOp FSCmdParser::Parse_OP_load(std::istream &args) {
+FSCmdParser::t_FSOp FSCmdParser::Parse_OP_load(std::istream &args) {
 	std::string path{};
 	args >> path;
 
@@ -85,7 +89,7 @@ t_FSOp FSCmdParser::Parse_OP_load(std::istream &args) {
 	};
 }
 
-t_FSOp FSCmdParser::Parse_OP_cd(std::istream &args) {
+FSCmdParser::t_FSOp FSCmdParser::Parse_OP_cd(std::istream &args) {
 	std::string path;
 	args >> path;
 
@@ -94,13 +98,13 @@ t_FSOp FSCmdParser::Parse_OP_cd(std::istream &args) {
 	};
 }
 
-t_FSOp FSCmdParser::Parse_OP_pwd(std::istream &) {
+FSCmdParser::t_FSOp FSCmdParser::Parse_OP_pwd(std::istream &) {
 	return [](I_FSOps &fs) {
 		fs.OP_pwd();
 	};
 }
 
-t_FSOp FSCmdParser::Parse_OP_cp(std::istream &args) {
+FSCmdParser::t_FSOp FSCmdParser::Parse_OP_cp(std::istream &args) {
 	std::string path1, path2;
 	args >> path1 >> path2;
 
@@ -109,7 +113,7 @@ t_FSOp FSCmdParser::Parse_OP_cp(std::istream &args) {
 	};
 }
 
-t_FSOp FSCmdParser::Parse_OP_mv(std::istream &args) {
+FSCmdParser::t_FSOp FSCmdParser::Parse_OP_mv(std::istream &args) {
 	std::string path1, path2;
 	args >> path1 >> path2;
 
@@ -118,7 +122,7 @@ t_FSOp FSCmdParser::Parse_OP_mv(std::istream &args) {
 	};
 }
 
-t_FSOp FSCmdParser::Parse_OP_rm(std::istream &args) {
+FSCmdParser::t_FSOp FSCmdParser::Parse_OP_rm(std::istream &args) {
 	std::string path;
 	args >> path;
 	Assert_Path_Not_Dot_Ddot(path);
@@ -128,7 +132,7 @@ t_FSOp FSCmdParser::Parse_OP_rm(std::istream &args) {
 	};
 }
 
-t_FSOp FSCmdParser::Parse_OP_mkdir(std::istream &args) {
+FSCmdParser::t_FSOp FSCmdParser::Parse_OP_mkdir(std::istream &args) {
 	std::string path;
 	args >> path;
 	Assert_Path_Not_Dot_Ddot(path);
@@ -138,7 +142,7 @@ t_FSOp FSCmdParser::Parse_OP_mkdir(std::istream &args) {
 	};
 }
 
-t_FSOp FSCmdParser::Parse_OP_rmdir(std::istream &args) {
+FSCmdParser::t_FSOp FSCmdParser::Parse_OP_rmdir(std::istream &args) {
 	std::string path;
 	args >> path;
 	Assert_Path_Not_Dot_Ddot(path);
@@ -148,7 +152,7 @@ t_FSOp FSCmdParser::Parse_OP_rmdir(std::istream &args) {
 	};
 }
 
-t_FSOp FSCmdParser::Parse_OP_ls(std::istream &args) {
+FSCmdParser::t_FSOp FSCmdParser::Parse_OP_ls(std::istream &args) {
 	std::string path{kDot};
 	if (!args.eof()) {
 		if (!(args >> path)) {
@@ -161,7 +165,7 @@ t_FSOp FSCmdParser::Parse_OP_ls(std::istream &args) {
 	};
 }
 
-t_FSOp FSCmdParser::Parse_OP_cat(std::istream &args) {
+FSCmdParser::t_FSOp FSCmdParser::Parse_OP_cat(std::istream &args) {
 	std::string path;
 	args >> path;
 
@@ -170,7 +174,7 @@ t_FSOp FSCmdParser::Parse_OP_cat(std::istream &args) {
 	};
 }
 
-t_FSOp FSCmdParser::Parse_OP_info(std::istream &args) {
+FSCmdParser::t_FSOp FSCmdParser::Parse_OP_info(std::istream &args) {
 	std::string path;
 	args >> path;
 
@@ -179,7 +183,7 @@ t_FSOp FSCmdParser::Parse_OP_info(std::istream &args) {
 	};
 }
 
-t_FSOp FSCmdParser::Parse_OP_incp(std::istream &args) {
+FSCmdParser::t_FSOp FSCmdParser::Parse_OP_incp(std::istream &args) {
 	std::string path1, path2;
 	args >> path1 >> path2;
 
@@ -188,12 +192,21 @@ t_FSOp FSCmdParser::Parse_OP_incp(std::istream &args) {
 	};
 }
 
-t_FSOp FSCmdParser::Parse_OP_outcp(std::istream &args) {
+FSCmdParser::t_FSOp FSCmdParser::Parse_OP_outcp(std::istream &args) {
 	std::string path1, path2;
 	args >> path1 >> path2;
 
 	return [path1, path2](I_FSOps &fs) {
 		fs.OP_outcp(path1, path2);
+	};
+}
+
+FSCmdParser::t_FSOp FSCmdParser::Parse_OP_slink(std::istream &args) {
+	std::string path1, path2;
+	args >> path1 >> path2;
+
+	return [path1, path2](I_FSOps &fs) {
+		fs.OP_slink(path1, path2);
 	};
 }
 

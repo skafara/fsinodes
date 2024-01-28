@@ -5,9 +5,19 @@
 #include "I_FSContainer.hpp"
 
 
+/**
+ * Memory-Mapped File
+ */
 class MMappedFile : public I_FSContainer {
 public:
+	/**
+	 * Opens or creates (size 0) a file and maps the file if size > 0
+	 * @param path Path Path
+	 */
 	MMappedFile(const std::string &path);
+	/**
+	 * Unmaps and closes the file
+	 */
 	~MMappedFile() override;
 
 	MMappedFile(const MMappedFile &) = delete;

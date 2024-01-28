@@ -7,36 +7,42 @@ const I_ReadableWritable::t_Byte_Buf DataBlock::kEmpty_Buf = [] () {
 	return buf;
 }();
 
-DataBlock::DataBlock(const std::shared_ptr<I_ReadableWritable> &dblock_data, size_t offset) :
-		A_OffsetReadableWritable(dblock_data, offset) {
+const DataBlock::t_DirItem DataBlock::kEmpty_Dir_Item{0, ""};
+
+DataBlock::DataBlock(const std::shared_ptr<I_ReadableWritable> &container, size_t offset) :
+		A_OffsetReadableWritable(container, offset) {
 	//
 }
 
-void DataBlock::Get_Content(t_Byte_Buf &buf, uint32_t lim) const {
+void DataBlock::Read_Content(t_Byte_Buf &buf, uint32_t lim) const {
 	Read(buf, 0, lim);
 }
 
-void DataBlock::Set_Content(const t_Byte_Buf &buf, uint32_t lim) {
+void DataBlock::Write_Content(const t_Byte_Buf &buf, uint32_t lim) {
 	Write(buf, 0, lim);
 }
 
 void DataBlock::Empty_Content() {
-	Set_Content(kEmpty_Buf);
+	Write_Content(kEmpty_Buf);
 }
 
-DataBlock::t_DirItem DataBlock::Get_Dir_Item(size_t idx) const {
+DataBlock::t_DirItem DataBlock::Read_Dir_Item(size_t idx) const {
 	return Read<t_DirItem>(idx * sizeof(t_DirItem));
 }
 
-void DataBlock::Set_Dir_Item(size_t idx, uint32_t item_inode_idx, const std::string &item_name) {
+void DataBlock::Write_Dir_Item(size_t idx, uint32_t item_inode_idx, const std::string &item_name) {
 	t_DirItem dir_item{item_inode_idx, item_name.c_str()};
 	Write(idx * sizeof(t_DirItem), dir_item);
 }
 
-uint32_t DataBlock::Get_Data_Block_Idx(uint32_t idx) {
+uint32_t DataBlock::Read_Reference(uint32_t idx) {
 	return Read<uint32_t>(idx * sizeof(uint32_t));
 }
 
-void DataBlock::Set_Data_Block_Idx(uint32_t idx, uint32_t dblock_idx) {
+void DataBlock::Write_Reference(uint32_t idx, uint32_t dblock_idx) {
 	Write(idx * sizeof(uint32_t), dblock_idx);
+}
+
+bool DataBlock::Is_Empty_Dir_Item(const DataBlock::t_DirItem &dir_item) {
+	return dir_item.Inode_Idx == kEmpty_Dir_Item.Inode_Idx && std::string{dir_item.Item_Name} == std::string{kEmpty_Dir_Item.Item_Name};
 }

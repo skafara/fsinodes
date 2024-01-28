@@ -3,8 +3,16 @@
 #include "I_ReadableWritable.hpp"
 
 
+/**
+ * Offset Readable Writable
+ */
 class A_OffsetReadableWritable : public I_ReadableWritable {
 public:
+	/**
+	 * Transparently constructs
+	 * @param rw_data Readable/Writable data
+	 * @param offset Offset
+	 */
 	A_OffsetReadableWritable(const std::shared_ptr<I_ReadableWritable> &rw_data, size_t offset) :
 			_rw_data(rw_data), _offset(offset) {
 		//

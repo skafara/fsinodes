@@ -1,8 +1,8 @@
 #include "Inode.hpp"
 
 
-Inode::Inode(const std::shared_ptr<I_ReadableWritable> &inode_data, size_t offset) :
-		A_OffsetReadableWritable(inode_data, offset) {
+Inode::Inode(const std::shared_ptr<I_ReadableWritable> &container, size_t offset) :
+		A_OffsetReadableWritable(container, offset) {
 	//
 }
 
@@ -50,7 +50,7 @@ Inode &Inode::Set_Direct(uint32_t idx, uint32_t direct) {
 	return *this;
 }
 
-Inode &Inode::Unset_Directs_Indirects() {
+Inode &Inode::Unset_References() {
 	for (uint32_t i = 0; i < kDirect_Refs_Cnt; ++i) {
 		Set_Direct(i, kDirect_Ref_Unset);
 	}
@@ -68,19 +68,3 @@ Inode &Inode::Set_Indirect2(uint32_t indirect2) {
 	Write(offsetof(t_Inode, Indirect2), indirect2);
 	return *this;
 }
-
-/*Iterator_DataBlocks Inode::begin_dblocks(const std::shared_ptr<Data> &data) {
-	return {*this, data};
-}
-
-Iterator_DataBlocks Inode::end_dblocks() {
-	return Iterator_DataBlocks::kDepleted;
-}
-
-Iterator_DirItems Inode::begin_diritems(const std::shared_ptr<Data> &data) {
-	return {*this, data};
-}
-
-Iterator_DirItems Inode::end_diritems() {
-	return Iterator_DirItems::kDepleted;
-}*/

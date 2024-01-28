@@ -2,12 +2,6 @@
 #include "util/FSCmdParser.hpp"
 
 
-/*Simulator::Simulator(std::istream &cmd_istream, std::unique_ptr<I_FSOps> fs) :
-	_cmd_istream(cmd_istream),
-	_fs(std::move(fs)) {
-	//
-}*/
-
 void Simulator::Run(std::istream &cmd_istream, I_FSOps &fs) {
 	for (std::string line; std::getline(cmd_istream, line);) {
 		if (line.empty()) {

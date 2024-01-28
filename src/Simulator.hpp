@@ -5,13 +5,16 @@
 #include "fs/FileSystem.hpp"
 
 
+/**
+ * Filesystem Simulator
+ */
 class Simulator {
 public:
-	//Simulator(std::istream &cmd_istream, std::unique_ptr<I_FSOps> fs);
-
+	/**
+	 * Runs the simulation on provided filesystem
+	 * @param cmd_istream Input stream of filesystem commands
+	 * @param fs Filesystem
+	 */
 	static void Run(std::istream &cmd_istream, I_FSOps &fs);
 
-private:
-	/*std::istream &_cmd_istream;
-	const std::unique_ptr<I_FSOps> _fs;*/
 };

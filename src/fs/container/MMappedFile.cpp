@@ -43,10 +43,6 @@ void MMappedFile::Read(t_Byte_Buf &buf, size_t idx, size_t len) const {
 		throw std::runtime_error{"Cannot Read From File '" + _path + "'"};
 	}
 
-	/*buf.reserve(buf.size() + len);
-	for (size_t i = 0; i < len; ++i) {
-		buf.push_back(_data[idx + i]);
-	}*/
 	const size_t old_size = buf.size();
 	buf.resize(old_size + len);
 	std::memcpy(buf.data() + old_size, _data + idx, len);
@@ -57,9 +53,6 @@ void MMappedFile::Write(const t_Byte_Buf &buf, size_t idx, size_t len) {
 		throw std::runtime_error{"Cannot Write To File '" + _path + "'"};
 	}
 
-	/*for (size_t i = 0; i < len; ++i) {
-		_data[idx + i] = buf[i];
-	}*/
 	std::memcpy(_data + idx, buf.data(), len);
 }
 
