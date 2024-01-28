@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Inode.hpp"
+#include "../../inodes/Inode.hpp"
 #include "../DataBlock.hpp"
 #include "../Data.hpp"
 #include "Iterator_DataBlocks.hpp"
@@ -13,7 +13,7 @@ public:
 	Iterator_DirItems begin() const;
 	Iterator_DirItems end() const;
 
-	t_DirItem operator*();
+	DataBlock::t_DirItem operator*();
 	Iterator_DirItems& operator++();
 
 	bool operator==(const Iterator_DirItems& other) const;

@@ -6,6 +6,6 @@ Inodes::Inodes(const std::shared_ptr<I_ReadableWritable> &inodes_data, size_t of
 	//
 }
 
-Inode Inodes::Get(size_t idx) const {
-	return {_rw_data, _offset + idx * sizeof(t_Inode)};
+Inode Inodes::Get(size_t idx) {
+	return {_rw_data, _offset + idx * sizeof(Inode::t_Inode)};
 }

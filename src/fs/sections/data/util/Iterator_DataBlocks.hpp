@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../Inode.hpp"
+#include "../../inodes/Inode.hpp"
 #include "../DataBlock.hpp"
 #include "../Data.hpp"
-#include "../../FileSystem.hpp"
+#include "../../../FileSystem.hpp"
 
 
 class Iterator_DataBlocks {

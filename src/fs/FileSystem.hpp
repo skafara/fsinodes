@@ -4,11 +4,11 @@
 #include <filesystem>
 
 #include "I_FSOps.hpp"
-#include "../io/MMappedFile.hpp"
-#include "components/Superblock.hpp"
-#include "components/util/Bitmap.hpp"
-#include "components/Inodes.hpp"
-#include "components/Data.hpp"
+#include "container/MMappedFile.hpp"
+#include "sections/superblock/Superblock.hpp"
+#include "sections/bitmaps/Bitmap.hpp"
+#include "sections/inodes/Inodes.hpp"
+#include "sections/data/Data.hpp"
 
 
 enum class FSMessages {
@@ -111,7 +111,7 @@ private:
 	std::filesystem::path _work_dir_path;
 	uint32_t _work_dir_inode_idx;
 
-	static t_Superblock Get_Formatted_Superblock(size_t fs_size);
+	static Superblock::t_Superblock Get_Formatted_Superblock(size_t fs_size);
 	static std::filesystem::path Get_Cannonical_Path(const std::filesystem::path &path);
 
 	uint32_t Resolve_Path(const std::string &path) const;

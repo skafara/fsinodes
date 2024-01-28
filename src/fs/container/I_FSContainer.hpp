@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../io/I_ReadableWritable.hpp"
-#include "../io/I_Resizable.hpp"
+#include "io/I_ReadableWritable.hpp"
+#include "io/I_Resizable.hpp"
 
 
 class I_FSContainer : public I_ReadableWritable, public I_Resizable {

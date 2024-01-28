@@ -51,11 +51,11 @@ Inode &Inode::Set_Direct(uint32_t idx, uint32_t direct) {
 }
 
 Inode &Inode::Unset_Directs_Indirects() {
-	for (uint32_t i = 0; i < 5; ++i) { // TODO
-		Set_Direct(i, -1); //TODO
+	for (uint32_t i = 0; i < kDirect_Refs_Cnt; ++i) {
+		Set_Direct(i, kDirect_Ref_Unset);
 	}
-	Set_Indirect1(-1); // TODO
-	Set_Indirect2(-1); // TODO
+	Set_Indirect1(kIndirect_Ref_Unset);
+	Set_Indirect2(kIndirect_Ref_Unset);
 	return *this;
 }
 

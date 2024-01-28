@@ -14,7 +14,7 @@ void DataBlock::Set_Content(const t_Byte_Buf &buf, uint32_t lim) {
 	Write(buf, 0, lim);
 }
 
-t_DirItem DataBlock::Get_Dir_Item(size_t idx) const {
+DataBlock::t_DirItem DataBlock::Get_Dir_Item(size_t idx) const {
 	return Read<t_DirItem>(idx * sizeof(t_DirItem));
 }
 

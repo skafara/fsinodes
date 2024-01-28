@@ -2,6 +2,7 @@
 
 #include <utility>
 
+
 Superblock::Superblock(const std::shared_ptr<I_ReadableWritable> &sb_data, size_t offset) :
 	A_OffsetReadableWritable(sb_data, offset) {
 	//

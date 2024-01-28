@@ -6,7 +6,7 @@ Iterator_DirItems::Iterator_DirItems(Inode &inode, const std::shared_ptr<Data> &
 	if (_it_dblocks == _it_dblocks.end()) {
 		Is_Depleted = true;
 	} else {
-		t_DirItem dir_item = *(*this);
+		DataBlock::t_DirItem dir_item = *(*this);
 		if (dir_item.Inode_Idx == 0 && std::string{dir_item.Item_Name}.empty()) {
 			Is_Depleted = true;
 		}
@@ -24,12 +24,12 @@ Iterator_DirItems Iterator_DirItems::end() const {
 	return it;
 }
 
-t_DirItem Iterator_DirItems::operator*() {
+DataBlock::t_DirItem Iterator_DirItems::operator*() {
 	return (*_it_dblocks).Get_Dir_Item(_it_dir_item_idx);
 }
 
 Iterator_DirItems &Iterator_DirItems::operator++() {
-	if (_it_dir_item_idx >= 1024 / sizeof(t_DirItem)) {
+	if (_it_dir_item_idx >= 1024 / sizeof(DataBlock::t_DirItem)) {
 		++_it_dblocks;
 		_it_dir_item_idx = 0;
 
@@ -40,7 +40,7 @@ Iterator_DirItems &Iterator_DirItems::operator++() {
 	}
 
 	_it_dir_item_idx++;
-	t_DirItem dir_item = *(*(this));
+	DataBlock::t_DirItem dir_item = *(*(this));
 	if (dir_item.Inode_Idx == 0 && std::string{dir_item.Item_Name}.empty()) {
 		Is_Depleted = true;
 		return *this;
@@ -76,7 +76,7 @@ Iterator_DirItems Iterator_DirItems::Remove_Dir_Item() {
 			break;
 		}
 	}
-	t_DirItem last = *it_old;
+	DataBlock::t_DirItem last = *it_old;
 
 	(*_it_dblocks).Set_Dir_Item(_it_dir_item_idx, last.Inode_Idx, last.Item_Name);
 	(*_it_dblocks).Set_Dir_Item(it_old._it_dir_item_idx, 0, ""); // TODO empty

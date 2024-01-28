@@ -3,25 +3,16 @@
 #include <string>
 #include <memory>
 
-#include "../../io/A_OffsetReadableWritable.hpp"
+#include "../../container/io/A_OffsetReadableWritable.hpp"
 
-
-#pragma pack(push, 1)
-struct s_DirItem {
-	const uint32_t Inode_Idx;
-	char Item_Name[12]; // TODO magic
-
-	s_DirItem(uint32_t inode_idx, const char item_name[12]) : Inode_Idx(inode_idx) { // nebo str?
-		std::strncpy(const_cast<char*>(Item_Name), item_name, sizeof(Item_Name));
-	}
-};
-#pragma pack(pop)
-
-using t_DataBlock = struct s_DataBlock;
-using t_DirItem = struct s_DirItem;
 
 class DataBlock : public A_OffsetReadableWritable {
+private:
+	struct s_DirItem;
+
 public:
+	using t_DirItem = struct s_DirItem;
+
 	static constexpr uint32_t kSize = 1024;
 
 	DataBlock(const std::shared_ptr<I_ReadableWritable> &dblock_data, size_t offset);
@@ -34,4 +25,17 @@ public:
 
 	uint32_t Get_Data_Block_Idx(uint32_t idx);
 	void Set_Data_Block_Idx(uint32_t idx, uint32_t dblock_idx);
+
+private:
+#pragma pack(push, 1)
+	struct s_DirItem {
+		const uint32_t Inode_Idx;
+		char Item_Name[12]; // TODO magic
+
+		s_DirItem(uint32_t inode_idx, const char item_name[12]) : Inode_Idx(inode_idx) { // nebo str?
+			std::strncpy(const_cast<char*>(Item_Name), item_name, sizeof(Item_Name));
+		}
+	};
+#pragma pack(pop)
+
 };

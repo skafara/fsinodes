@@ -5,7 +5,7 @@
 
 #include "FileSystem.hpp"
 #include "../util/FSCmdParser.hpp"
-#include "components/util/Iterator_DirItems.hpp"
+#include "sections/data/util/Iterator_DirItems.hpp"
 
 
 const std::string &Get_FSMessage_String(FSMessages message) {
@@ -25,7 +25,7 @@ void FileSystem::OP_format(uint32_t size) {
 	_work_dir_inode_idx = kRoot_Dir_Inode_Idx;
 	_fs_container = std::make_shared<MMappedFile>(_fs_path);
 
-	const t_Superblock sb_formatted = Get_Formatted_Superblock(size);
+	const Superblock::t_Superblock sb_formatted = Get_Formatted_Superblock(size);
 	try {
 		_fs_container->Resize(sb_formatted.Disk_Size);
 		_fs_container->Clear();
@@ -338,7 +338,7 @@ void FileSystem::OP_ls(const std::string &path) const {
 	}
 
 	for (Iterator_DirItems it{inode, _data}; it != it.end(); ++it) {
-		t_DirItem dir_item = *it;
+		DataBlock::t_DirItem dir_item = *it;
 
 		if (_inodes->Get(dir_item.Inode_Idx).Get_Is_Dir()) {
 			_out_stream << "+";
@@ -397,10 +397,10 @@ void FileSystem::OP_info(const std::string &path) const {
 		_out_stream << " - i-node " << inode_idx;
 
 		_out_stream << " - Direct";
-		for (uint32_t i = 0; i < kInode_Directs_Cnt; ++i) {
+		for (uint32_t i = 0; i < Inode::kDirect_Refs_Cnt; ++i) {
 			const uint32_t direct = inode.Get_Direct(i);
 			_out_stream << " [" << i << "]";
-			if (direct != Inode::kRef_Unset) {
+			if (direct != Inode::kDirect_Ref_Unset) {
 				_out_stream << direct;
 			}
 			else {
@@ -410,7 +410,7 @@ void FileSystem::OP_info(const std::string &path) const {
 
 		const uint32_t indirect1 = inode.Get_Indirect1();
 		_out_stream << " - Indirect1 ";
-		if (indirect1 != Inode::kRef_Unset) {
+		if (indirect1 != Inode::kDirect_Ref_Unset) {
 			_out_stream << indirect1;
 		}
 		else {
@@ -419,7 +419,7 @@ void FileSystem::OP_info(const std::string &path) const {
 
 		const uint32_t indirect2 = inode.Get_Indirect2();
 		_out_stream << " - Indirect2 ";
-		if (indirect2 != Inode::kRef_Unset) {
+		if (indirect2 != Inode::kDirect_Ref_Unset) {
 			_out_stream << indirect2;
 		}
 		else {
@@ -553,7 +553,7 @@ uint32_t FileSystem::Resolve_Path(const std::string &path) const {
 		Inode inode = _inodes->Get(inode_idx);
 		bool found = false;
 		for (Iterator_DirItems it{inode, _data}; it != it.end(); ++it) {
-			t_DirItem dir_item = *it;
+			DataBlock::t_DirItem dir_item = *it;
 
 			if (dir_item.Item_Name == filename) {
 				if (!_inodes->Get(dir_item.Inode_Idx).Get_Is_Dir()) {
@@ -578,9 +578,9 @@ uint32_t FileSystem::Resolve_Parent(const std::string &path) const {
 	return Resolve_Path(_path.parent_path());
 }
 
-t_Superblock FileSystem::Get_Formatted_Superblock(size_t fs_size) {
-	constexpr uint32_t sb_size = sizeof(t_Superblock);
-	constexpr uint32_t inode_size = sizeof(t_Inode);
+Superblock::t_Superblock FileSystem::Get_Formatted_Superblock(size_t fs_size) {
+	constexpr uint32_t sb_size = sizeof(Superblock::t_Superblock);
+	constexpr uint32_t inode_size = sizeof(Inode::t_Inode);
 
 	constexpr uint32_t dblock_size = DataBlock::kSize;
 	constexpr uint32_t exp_file_dblocks = 10;
@@ -673,6 +673,7 @@ uint32_t FileSystem::Acquire_Data_Block() {
 	}
 
 	if (dblock_idx == 0) {
+		std::cout << "dblock 0" << std::endl;
 		throw -1;
 	}
 
