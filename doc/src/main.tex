@@ -1,0 +1,360 @@
+\documentclass[a4paper, 12pt]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[IL2]{fontenc}
+\usepackage[czech]{babel}
+\usepackage{hyperref}
+\usepackage[backend=biber, style=ieee, doi=false, url=false, eprint=false]{biblatex}
+\usepackage{amsmath}
+\usepackage{numprint}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{url}
+\usepackage{svg}
+
+\addbibresource{references.bib}
+\graphicspath{{img/}}
+
+\lstset{language=C, columns=fullflexible}
+
+\title{Souborový systém s~i-uzly}
+\author{Stanislav Kafara}
+\date{\today}
+
+\begin{document}
+
+\begin{titlepage}
+
+\begin{center}
+
+\begin{figure}
+\centering
+\includegraphics[width=.75\textwidth]{FAV_logo}
+%\caption{Logo Fakulty aplikovaných věd ZČU}
+%\label{fig:fav_logo}
+\end{figure}
+
+Katedra informatiky a výpočetní techniky
+
+\vspace{5\baselineskip}
+
+Semestrální práce z~předmětu\\
+Základy operačních systémů
+
+\vspace{2\baselineskip}
+
+{\makeatletter
+\LARGE \bfseries \@title
+\makeatother}
+
+\end{center}
+
+\vfill
+
+\begin{flushleft}
+
+\textbf{Autor:}\\
+{\makeatletter
+\@author
+\makeatother}\\
+A21B0160P\\
+\texttt{skafara@students.zcu.cz}
+
+\end{flushleft}
+
+\end{titlepage}
+
+\begin{tableofcontents}
+
+\end{tableofcontents}
+
+\chapter{Zadání}
+
+Tématem semestrální práce bude práce se zjednodušeným souborovým systémem založeným na
+i-uzlech. Vaším cílem bude splnit několik vybraných úloh.
+
+Program bude mít jeden parametr a tím bude název Vašeho souborového systému. Po spuštění bude
+program čekat na zadání jednotlivých příkazů s~minimální funkčností viz níže. Všechny soubory
+mohou být zadány jak absolutní, tak relativní cestou.
+
+\begin{enumerate}
+    \item \texttt{cp s1 s2}
+
+    Zkopíruje soubor s1 do umístění s2.
+
+    Možný výsledek:
+
+    \begin{itemize}
+        \item[] \texttt{OK}
+        \item[] \texttt{FILE NOT FOUND}
+        \item[] \texttt{PATH NOT FOUND}
+    \end{itemize}
+
+    \item \texttt{mv s1 s2}
+
+    Přesune soubor s1 do umístění s2, nebo přejmenuje s1 na s2.
+
+    Možný výsledek:
+
+    \begin{itemize}
+        \item[] \texttt{OK}
+        \item[] \texttt{FILE NOT FOUND}
+        \item[] \texttt{PATH NOT FOUND}
+    \end{itemize}
+
+    \item \texttt{rm s1}
+
+    Smaže soubor s1.
+
+    Možný výsledek:
+
+    \begin{itemize}
+        \item[] \texttt{OK}
+        \item[] \texttt{FILE NOT FOUND}
+    \end{itemize}
+
+    \item \texttt{mkdir a1}
+
+    Vytvoří adresář a1.
+
+    Možný výsledek:
+
+    \begin{itemize}
+        \item[] \texttt{OK}
+        \item[] \texttt{PATH NOT FOUND}
+        \item[] \texttt{EXIST}
+    \end{itemize}
+
+    \item \texttt{rmdir a1}
+
+    Smaže prázdný adresář a1.
+
+    Možný výsledek:
+
+    \begin{itemize}
+        \item[] \texttt{OK}
+        \item[] \texttt{FILE NOT FOUND}
+        \item[] \texttt{NOT EMPTY}
+    \end{itemize}
+
+    \item \texttt{ls a1}
+
+    \texttt{ls}
+
+    Vypíše obsah adresáře a1.
+
+    Možný výsledek:
+
+    \begin{itemize}
+        \item[] \texttt{-FILE}
+        \item[] \texttt{+DIRECTORY}
+        \item[] \texttt{PATH NOT FOUND}
+    \end{itemize}
+
+    \item \texttt{cat s1}
+
+    Vypíše obsah souboru s1.
+
+    Možný výsledek:
+
+    \begin{itemize}
+        \item[] \texttt{OBSAH}
+        \item[] \texttt{FILE NOT FOUND}
+    \end{itemize}
+
+    \item \texttt{cd a1}
+
+    Změní aktuální cestu do adresáře a1.
+
+    Možný výsledek:
+
+    \begin{itemize}
+        \item[] \texttt{OK}
+        \item[] \texttt{PATH NOT FOUND}
+    \end{itemize}
+
+    \item \texttt{pwd}
+
+    Možný výsledek:
+
+    \begin{itemize}
+        \item[] \texttt{PATH}
+    \end{itemize}
+
+    \item \texttt{info a1}
+
+    \texttt{info s1}
+
+    Vypíše informace o~souboru/adresáři s1/a1 (v~jakých clusterech se nachází).
+
+    Možný výsledek:
+
+    \begin{itemize}
+        \item[] \texttt{NAME - SIZE - i-node NUMBER - přímé a nepřímé odkazy}
+        \item[] \texttt{FILE NOT FOUND}
+    \end{itemize}
+
+    \item \texttt{incp s1 s2}
+
+    Nahraje soubor s1 z~pevného disku do umístění s2 ve vašem FS.
+
+    Možný výsledek:
+
+    \begin{itemize}
+        \item[] \texttt{OK}
+        \item[] \texttt{FILE NOT FOUND}
+        \item[] \texttt{PATH NOT FOUND}
+    \end{itemize}
+
+    \item \texttt{outcp s1 s2}
+
+    Nahraje soubor s1 z~vašeho FS do umístění s2 na pevném disku.
+
+    Možný výsledek:
+
+    \begin{itemize}
+        \item[] \texttt{OK}
+        \item[] \texttt{FILE NOT FOUND}
+        \item[] \texttt{PATH NOT FOUND}
+    \end{itemize}
+
+    \item \texttt{load s1}
+
+    Načte soubor z~pevného disku, ve kterém budou jednotlivé příkazy, a začne je sekvenčně
+vykonávat. Formát je 1 příkaz/1řádek.
+
+    Možný výsledek:
+
+    \begin{itemize}
+        \item[] \texttt{OK}
+        \item[] \texttt{FILE NOT FOUND}
+    \end{itemize}
+
+    \item \texttt{format 600MB}
+
+    Příkaz provede formát souboru, který byl zadán jako parametr při spuštení programu na souborový systém dané velikosti. Pokud už soubor nějaká data obsahoval, budou přemazána. Pokud soubor neexistoval, bude vytvořen.
+
+    Možný výsledek:
+
+    \begin{itemize}
+        \item[] \texttt{OK}
+        \item[] \texttt{CANNOT CREATE FILE}
+    \end{itemize}
+
+    \item \texttt{slink s1 s2}
+
+    Vytvoří symbolický link na soubor s1 s~názvem s2. Dále se s~ním pracuje očekávaným způsobem, tedy např. cat s2 vypíše obsah souboru s1.
+\end{enumerate}
+
+Budeme předpokládat korektní zadání syntaxe příkazů, nikoliv však sémantiky (tj. např. cp s1 zadáno nebude, ale může být zadáno cat s1, kde s1 neexistuje).
+
+Maximální délka názvu souboru bude 8+3=11 znaků (jméno.přípona) + \textbackslash0 (ukončovací znak v~C/C++), tedy 12 bytů.
+
+Každý název bude zabírat právě 12 bytů (do délky 12 bytů doplníte \textbackslash0 - při kratších názvech).
+
+\chapter{Popis implementace}
+
+\section{Reprezentace dat}
+
+Obsah souborového systému je reprezentován souborem mapovaném v~hlavní paměti. Tento soubor je reprezentován třídou \texttt{MMappedFile}.
+
+Každá část souborového systému, tj. superblok, bitmapy, i-uzly a datové bloky jsou reprezentovány odpovídající třídou.
+
+Všechny tyto třídy splňují rozhraní \texttt{I\_ReadableWritable} pro jednotný a jednoduchý zápis a čtení z~podlehlé reprezentace souborového systému souborem mapovaným v~hlavní paměti.
+
+\section{Vybrané operace}
+
+\subsection{Formátování souborového systému}
+
+Souborový systém vyplní hodnoty v~superbloku, inicializuje kořenový adresář a vše zbylé vyplní prázdnými hodnotami. Těmi jsou:
+
+\begin{itemize}
+    \item 0 pro neobsazené bity v~bitmapě,
+    \item -1 pro nepoužité přímé odkazy v~i-uzlu,
+    \item 0 pro nepoužité nepřímé odkazy v~i-uzlu a
+    \item 0 pro nepoužitý prostor v~datovém bloku.
+\end{itemize}
+
+Počet i-uzlů a datových bloků a skutečná velikost souborového systému je odvozena z~požadavků na souborový systém.
+
+Ty jsou definovány následovně:
+
+\begin{enumerate}
+    \item Velikost souborového systému je maximální možná.
+    \item Počet i-uzlů a datových bloků je dělitelný 8.
+    \item Předpokládá se ukládání souborů průměrně zabírající 10 datových bloků.
+\end{enumerate}
+
+Výsledkem jsou vztahy pro výpočet parametrů souborového systému.
+
+\subsection{Kopírování souboru}
+
+Před zahájením kopírování je vypočten počet potřebných datových bloků k~uložení kopírovaného souboru, a sice datových bloků uchovávající skutečný obsah souboru, ale i nepřímých datových bloků uchovávající reference na datové bloky, které obsahují skutečný obsah souboru.
+
+Tyto datové bloky jsou pak rezervovány a používány při kopírování. Proces procházení přímých i nepřímých datových bloků je realizován promocí iterátoru, který zpřístupňuje obsah v~datových blocích, které mají uchovávat skutečný obsah souboru.
+
+Postupně jsou tedy tyto datové bloky procházeny, v~bitmapě jsou označeny jako použité a je do nich zapisován obsah vyrovnávací paměti obsahující části kopírovaného souboru.
+
+Při kopírování souboru ze souborového systému je postup opačný. Datové bloky jsou postupně procházeny, jejich obsahem je plněna vyrovnávací paměť, která je následně zapisovaná do souboru.
+
+\subsection{Přesouvání/přejmenování souboru}
+
+K~přesunu/přejmenování souboru dochází pouze tím, že je vymazán záznam o~daném souboru ve zdrojovém adresáři a je přidán záznam o~daném souboru v~cílovém adresáři.
+
+Procházení záznamů o~souborech v~adresáři je realizováno pomocí iterátoru. Iterátor zároveň zpřístupňuje připojení nového záznamu a vymazání záznamu.
+
+\subsection{Mazání souboru}
+
+Mazání souboru probíhá tak, že jsou pomocí iterátoru procházeny datové bloky obsahující jak skutečný obsah souboru, tak i odkazy na ně a jsou uvolněny. Uvolnění datového bloku proběhne tak, že je mu v~bitmapě nastaven příznak jako nepoužitý a obsah datového bloku je nastaven na prázdnou hodnotu.
+
+\subsection{Vyhodnocení cesty}
+
+Cesta je vyhodnocována postupným procházením datových bloků adresářů a hledání v~nich daných jmen sekvenčním procházením pomocí iterátoru zpřístupňující záznamy o~souborech v~datových blocích.
+
+Celý proces je opakován do doby, než je celá cesta zpracována, nebo dojde k~chybě a cesta není nalezena.
+
+\subsection{Symbolický odkaz}
+
+Symbolický odkaz je samostatný soubor (soubor nebo adresář). Navíc má příznak, že je to symbolický odkaz. Obsahem takového souboru je relativní nebo absolutní cesta, na kterou byl při jeho vzniku navázán.
+
+Při vzniku obsahuje platnou cestu. Nicméně podlehlý soubor nebo adresář může být odstraněn, přejmenován nebo přesunut a symbolický odkaz nepřestane existovat, ale stane se neplatným, protože ukazuje na neexistující soubor/adresář.
+
+Správná interpretace symbolického odkazu je zajištěna expandováním cesty, kterou obsahuje, když je obsažen ve vyhodnocované cestě.
+
+Některé operace vyžadují, aby cesta byla expandovaná celá. Těmi jsou např. \texttt{cd}, \texttt{cat}, \texttt{cp}. Některé naopak vyžadují, aby cesta byla expandovaná celá vyjma případné existence symbolického odkazu na konci cesty. Těmi jsou např. \texttt{mv}, \texttt{rm}, ... To plyne z~požadavků na symbolický odkaz.
+
+\chapter{Uživatelská příručka}
+
+Program vyžaduje překladač jazyka C++ podporující standard jazyka \texttt{C++20} a utilitu \texttt{cmake} verze alespoň 3.0.
+
+\section{Překlad a sestavení}
+
+Program je přeložitelný a spustitelný v~prostředí Unix. Překlad a sestavení programu je řízeno skriptem utility \texttt{cmake}. K~překladu a sestavení programu dojde po zadání příkazu v~kořenovém adresáři:
+
+\texttt{\$ cmake -Bbuild -Ssrc \&\& cd build \&\& make}
+
+Výsledný spustitelný soubor se nachází v~adresáři \texttt{build} a jmenuje se \texttt{fsinodes}.
+
+\section{Spuštění}
+
+Program přijímá právě jeden vstupní argument. Vzor příkazu spuštění je:
+
+\texttt{fsinodes ⟨fs-data⟩}
+
+Symbol ⟨\texttt{fs-data}⟩ představuje cestu k~souboru obsahující obsah souborového systému.
+
+Příkaz spuštění programu může vypadat následovně:
+
+\texttt{fsinodes fs.dat}
+
+V~případě zadání nesprávného počtu nebo neplatných hodnot argumentů program vypíše chybovou hlášku a příručku k~ovládání programu.
+
+\chapter{Závěr}
+
+Implementované řešení splňuje veškeré požadavky zadání.
+
+Zdrojový kód programu trochu ztrácí na přehlednosti, což z~časových důvodů nebylo přepracováno. Nicméně i tak je dostatečně čitelný a rozšiřitelný.
+
+\printbibliography
+
+\end{document}
+
