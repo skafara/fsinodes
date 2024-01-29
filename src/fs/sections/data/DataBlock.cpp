@@ -53,10 +53,11 @@ std::string DataBlock::Read_Path() {
 	std::ostringstream osstream;
 	for (size_t i = 0; ; ++i) {
 		const char c = Read<char>(i);
-		osstream << c;
 		if (c == 0x00) {
 			break;
 		}
+
+		osstream << c;
 	}
 	return osstream.str();
 }

@@ -18,7 +18,7 @@ public:
 	 * Formats the FS
 	 * @param size FS size
 	 */
-	virtual void OP_format(uint32_t size) = 0;
+	virtual void OP_format(size_t size) = 0;
 	/**
 	 * Loads and executes commands from file
 	 * @param path Path to file

@@ -61,9 +61,9 @@ FSCmdParser::t_FSOp FSCmdParser::Parse_OP_format(std::istream &args) {
 		throw std::invalid_argument{"'" + size_input + "' is not a valid size."};
 	}
 
-	const uint32_t number = static_cast<uint32_t>(std::stoul(match[1].str()));
+	const size_t number = static_cast<uint32_t>(std::stoull(match[1].str()));
 	const std::string &unit = match[2].str();
-	uint32_t multiplier;
+	size_t multiplier;
 	if (unit == "KB") {
 		multiplier = 1024; // 1K
 	}
@@ -74,7 +74,7 @@ FSCmdParser::t_FSOp FSCmdParser::Parse_OP_format(std::istream &args) {
 		multiplier = 1073741824; // 1G
 	}
 
-	const uint32_t size = number * multiplier;
+	const size_t size = number * multiplier;
 	return [size](I_FSOps &fs) {
 		fs.OP_format(size);
 	};
@@ -204,6 +204,7 @@ FSCmdParser::t_FSOp FSCmdParser::Parse_OP_outcp(std::istream &args) {
 FSCmdParser::t_FSOp FSCmdParser::Parse_OP_slink(std::istream &args) {
 	std::string path1, path2;
 	args >> path1 >> path2;
+	Assert_Path_Not_Dot_Ddot(path2);
 
 	return [path1, path2](I_FSOps &fs) {
 		fs.OP_slink(path1, path2);

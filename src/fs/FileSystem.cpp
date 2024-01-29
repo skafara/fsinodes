@@ -21,7 +21,7 @@ FileSystem::FileSystem(const std::string &fs_path, std::ostream &out_stream) :
 	}
 }
 
-void FileSystem::OP_format(uint32_t size) {
+void FileSystem::OP_format(size_t size) {
 	_work_dir = {kRoot_Dir_Inode_Idx, kRoot_Dir_Path};
 	_fs_container = std::make_shared<MMappedFile>(_fs_path);
 
@@ -571,7 +571,52 @@ void FileSystem::OP_outcp(const std::string &path1, const std::string &path2) {
 
 void FileSystem::OP_slink(const std::string &path1, const std::string &path2) {
 	Assert_Is_Formatted();
-	Assert_Valid_Filename_Length("dst_filename");
+	Assert_Valid_Filename_Length(path2);
+	Assert_Has_Resources(*_bm_inodes, 1);
+	Assert_Has_Resources(*_bm_data, 1);
+
+	bool src_is_dir = false;
+	try {
+		if (_inodes->Get(Resolve_Final_Path_Inode(path1)).Get_Is_Dir()) {
+			src_is_dir = true;
+		}
+	}
+	catch (const PathNotFoundException &) {
+		throw FSException{FSMessages::kFileNotFound};
+	}
+
+	try {
+		Resolve_Final_Path_Inode(path2);
+		throw FSException{FSMessages::kPathNotFound};
+	}
+	catch (const PathNotFoundException &) {
+		//
+	}
+
+	const uint32_t dst_dir_inode_idx = Resolve_Final_Parent_Inode(path2);
+	const std::string dst_filename = std::filesystem::path{path2}.filename();
+
+	const uint32_t dst_inode_idx = Acquire_Inode();
+	Inode dst_inode = _inodes->Get(dst_inode_idx);
+	dst_inode
+		.Set_Is_Dir(false)
+		.Set_Is_Symlink(true)
+		.Set_Refs_Cnt(1)
+		.Set_File_Size(DataBlock::kSize)
+		.Unset_References();
+	if (src_is_dir) {
+		dst_inode.Set_Is_Dir(true);
+	}
+
+	Iterator_DataBlocks it_dst_dblocks{dst_inode, _data};
+	it_dst_dblocks.Append([this] () {
+		return Acquire_Data_Block();
+	});
+	(*it_dst_dblocks).Write_Path(path1);
+
+	Inode dst_dir_inode = _inodes->Get(dst_dir_inode_idx);
+	Iterator_DirItems it_dir_items{dst_dir_inode, _data};
+	it_dir_items.Append(dst_inode_idx, dst_filename);
 
 	Print_Message(FSMessages::kOk);
 }
@@ -706,16 +751,12 @@ void FileSystem::Assert_Valid_Filename_Length(const std::filesystem::path &path)
 
 std::pair<uint32_t, std::filesystem::path>
 FileSystem::Resolve_Path(const std::filesystem::path &path, const std::pair<uint32_t, std::filesystem::path> &start, bool is_ignore_end) const {
+	std::filesystem::path result_path{start.second};
 	std::filesystem::path path_{path};
-	auto begin = path_.begin();
-	uint32_t inode_idx = start.first;
-	if (begin->string() == kRoot_Dir_Path) {
-		begin++;
-		inode_idx = kRoot_Dir_Inode_Idx;
-	}
 
+	uint32_t inode_idx = start.first;
 	bool is_dir = true;
-	for (auto it_path = begin; it_path != path_.end();) {
+	for (auto it_path = path_.begin(); it_path != path_.end();) {
 		if (!is_dir) {
 			throw PathNotFoundException{};
 		}
@@ -726,55 +767,61 @@ FileSystem::Resolve_Path(const std::filesystem::path &path, const std::pair<uint
 			continue;
 		}
 
+		if (filename == kRoot_Dir_Path) {
+			inode_idx = kRoot_Dir_Inode_Idx;
+			result_path = kRoot_Dir_Path;
+			++it_path;
+			continue;
+		}
+
 		Inode inode = _inodes->Get(inode_idx);
-		bool found = false;
+		bool found_item = false;
+		bool found_symlink = false;
 		for (Iterator_DirItems it{inode, _data}; it != Iterator_DirItems::kDepleted; ++it) {
 			DataBlock::t_DirItem dir_item = *it;
 			if (dir_item.Item_Name == filename) {
+				found_item = true;
+				Inode found_inode = _inodes->Get(dir_item.Inode_Idx);
+
+				if (found_inode.Get_Is_Symlink()) {
+					found_symlink = true;
+
+					auto path_left{++it_path};
+					if (path_left == path_.end() && is_ignore_end) {
+						return {dir_item.Inode_Idx, Get_Cannonical_Path(result_path / filename)};
+					}
+
+					std::filesystem::path new_path = _data->Get(found_inode.Get_Direct(0)).Read_Path();
+					for (; path_left != path_.end(); ++path_left) {
+						new_path /= (*path_left);
+					}
+
+					path_ = new_path;
+					it_path = path_.begin();
+					break;
+				}
+
+				if (!found_inode.Get_Is_Dir()) {
+					is_dir = false;
+				}
 				inode_idx = dir_item.Inode_Idx;
-				found = true;
+				result_path /= filename;
 				break;
 			}
 		}
 
-		if (!found) {
+		if (!found_item) {
 			throw PathNotFoundException{};
 		}
 
-		if (inode.Get_Is_Symlink()) {
-			if (it_path == path.end()) {
-				if (is_ignore_end) {
-					return {inode_idx, "path"}; // TODO
-				}
-			}
-
-			std::filesystem::path new_path = _data->Get(inode.Get_Direct(0)).Read_Path();
-			auto path_left{it_path};
-			for (; path_left != path.end(); ++path_left) {
-				new_path /= (*path_left);
-			}
-
-			path_ = new_path;
-			it_path = std::filesystem::path{path_}.begin();
+		if (found_symlink) {
 			continue;
-		}
-
-		if (!inode.Get_Is_Dir()) {
-			is_dir = false;
 		}
 
 		++it_path;
 	}
 
-	std::filesystem::path result_path;
-	if (path.is_absolute()) {
-		result_path = Get_Cannonical_Path(path);
-	}
-	else {
-		result_path = Get_Cannonical_Path(start.second / path);
-	}
-
-	return {inode_idx, result_path};
+	return {inode_idx, Get_Cannonical_Path(result_path)};
 }
 
 uint32_t FileSystem::Resolve_Path_Inode(const std::filesystem::path &path) const {

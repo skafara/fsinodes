@@ -94,7 +94,7 @@ public:
 	FileSystem &operator=(const FileSystem &) = delete;
 
 public:
-	void OP_format(uint32_t size) override;
+	void OP_format(size_t size) override;
 	void OP_load(const std::string &path) override;
 
 	void OP_cd(const std::string &path) override;
@@ -143,27 +143,112 @@ private:
 
 	std::pair<uint32_t, std::filesystem::path> _work_dir;
 
+	/**
+	 * Computes data blocks count a file will need to be stored
+	 * @param filesize File size
+	 * @return Count
+	 */
 	static uint32_t Get_Necessary_Data_Blocks_Cnt(size_t filesize);
 
+	/**
+	 * Returns a superblock formatted relative to the FS size
+	 * @param fs_size FS size
+	 * @return Superblock
+	 */
 	static Superblock::t_Superblock Get_Formatted_Superblock(size_t fs_size);
+	/**
+	 * Returns an absolute without Dot and Ddot files
+	 * @param path Path
+	 * @return Path
+	 */
 	static std::filesystem::path Get_Cannonical_Path(const std::filesystem::path &path);
 
+	/**
+	 * Initializes FS sections
+	 */
 	void Init_Structures();
+	/**
+	 * Returns whether has been formatted
+	 * @return Bool
+	 */
 	bool Is_Formatted() const;
 
+	/**
+	 * Resolves a path to the inode index and path
+	 * @param path Path
+	 * @param start Starting point (directory inode index and path)
+	 * @param is_ignore_end Ignore expanding symlink if it is the last element of path
+	 * @return Inode index and path
+	 */
 	std::pair<uint32_t, std::filesystem::path> Resolve_Path(const std::filesystem::path &path, const std::pair<uint32_t, std::filesystem::path> &start, bool is_ignore_end) const;
+	/**
+	 * Resolves a path from working directory
+	 * Ignores expanding symlink at the end
+	 * @param path Path
+	 * @return Inode index
+	 */
 	uint32_t Resolve_Path_Inode(const std::filesystem::path &path) const;
+	/**
+	 * Resolves a path from working directory
+	 * Expands symlinks at the end
+	 * @param path Path
+	 * @return Inode index and path
+	 */
 	std::pair<uint32_t, std::filesystem::path> Resolve_Final_Path(const std::filesystem::path &path) const;
+	/**
+	 * Resolves a path from working directory
+	 * Expands symlinks at the end
+	 * @param path Path
+	 * @return Inode index
+	 */
 	uint32_t Resolve_Final_Path_Inode(const std::filesystem::path &path) const;
+	/**
+	 * Resolves a parent path from working directory
+	 * Expands symlinks at the end
+	 * @param path Path
+	 * @return Inode index
+	 */
 	uint32_t Resolve_Final_Parent_Inode(const std::filesystem::path &path) const;
 
+	/**
+	 * Acquires an inode
+	 * Sets it as spent
+	 * @return Inode index
+	 */
 	uint32_t Acquire_Inode();
+	/**
+	 * Acquires a data block
+	 * Sets it as spent
+	 * @return Data block index
+	 */
 	uint32_t Acquire_Data_Block();
+	/**
+	 * Acquires a data block with given index
+	 * Sets it as spent
+	 * @param dblock_idx Data block index
+	 * @return Data block index
+	 */
 	uint32_t Acquire_Data_Block(uint32_t dblock_idx);
 
+	/**
+	 * Prints FS message
+	 * @param message Message
+	 */
 	void Print_Message(FSMessages message) const;
 
+	/**
+	 * Asserts file name length validity
+	 * @param path Path
+	 */
 	static void Assert_Valid_Filename_Length(const std::filesystem::path &path);
+	/**
+	 * Asserts FS has been formatted
+	 */
 	void Assert_Is_Formatted() const;
+	/**
+	 * Asserts there is enough resources
+	 * @param bitmap Bitmap
+	 * @param cnt Count
+	 */
 	static void Assert_Has_Resources(const Bitmap &bitmap, uint32_t cnt);
 };
