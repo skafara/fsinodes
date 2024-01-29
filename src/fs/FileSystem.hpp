@@ -141,8 +141,7 @@ private:
 	std::unique_ptr<Inodes> _inodes;
 	std::shared_ptr<Data> _data;
 
-	std::filesystem::path _work_dir_path;
-	uint32_t _work_dir_inode_idx;
+	std::pair<uint32_t, std::filesystem::path> _work_dir;
 
 	static uint32_t Get_Necessary_Data_Blocks_Cnt(size_t filesize);
 
@@ -152,8 +151,11 @@ private:
 	void Init_Structures();
 	bool Is_Formatted() const;
 
-	uint32_t Resolve_Path(const std::string &path) const;
-	uint32_t Resolve_Parent(const std::string &path) const;
+	std::pair<uint32_t, std::filesystem::path> Resolve_Path(const std::filesystem::path &path, const std::pair<uint32_t, std::filesystem::path> &start, bool is_ignore_end) const;
+	uint32_t Resolve_Path_Inode(const std::filesystem::path &path) const;
+	std::pair<uint32_t, std::filesystem::path> Resolve_Final_Path(const std::filesystem::path &path) const;
+	uint32_t Resolve_Final_Path_Inode(const std::filesystem::path &path) const;
+	uint32_t Resolve_Final_Parent_Inode(const std::filesystem::path &path) const;
 
 	uint32_t Acquire_Inode();
 	uint32_t Acquire_Data_Block();

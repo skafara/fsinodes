@@ -84,6 +84,9 @@ public:
 	 */
 	void Write_Reference(uint32_t idx, uint32_t dblock_idx);
 
+	std::string Read_Path();
+	void Write_Path(const std::string &path);
+
 private:
 	static const t_Byte_Buf kEmpty_Buf;
 

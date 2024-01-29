@@ -45,6 +45,11 @@ public:
 	 */
 	bool Get_Is_Dir() const;
 	/**
+	 * Returns whether is a symbolic link
+	 * @return Bool
+	 */
+	bool Get_Is_Symlink() const;
+	/**
 	 * Returns references count
 	 * @return Count
 	 */
@@ -79,6 +84,12 @@ public:
 	 * @return This
 	 */
 	Inode &Set_Is_Dir(bool val);
+	/**
+	 * Sets whether is a symbolic link
+	 * @param val Value
+	 * @return This
+	 */
+	Inode &Set_Is_Symlink(bool val);
 	/**
 	 * Sets references count
 	 * @param cnt Count
@@ -124,6 +135,8 @@ private:
 	struct s_Inode {
 		/// Is directory
 		const bool Is_Dir;
+		/// Is symbolic link
+		const bool Is_Symlink;
 		/// References count
 		const uint8_t Refs_Cnt;
 		/// File size [B]

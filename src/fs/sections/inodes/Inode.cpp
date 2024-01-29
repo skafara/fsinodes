@@ -10,6 +10,10 @@ bool Inode::Get_Is_Dir() const {
 	return Read<bool>(offsetof(t_Inode, Is_Dir));
 }
 
+bool Inode::Get_Is_Symlink() const {
+	return Read<bool>(offsetof(t_Inode, Is_Symlink));
+}
+
 uint8_t Inode::Get_Refs_Cnt() const {
 	return Read<uint32_t>(offsetof(t_Inode, Refs_Cnt));
 }
@@ -32,6 +36,11 @@ uint32_t Inode::Get_Indirect2() const {
 
 Inode &Inode::Set_Is_Dir(bool val) {
 	Write(offsetof(t_Inode, Is_Dir), val);
+	return *this;
+}
+
+Inode &Inode::Set_Is_Symlink(bool val) {
+	Write(offsetof(t_Inode, Is_Symlink), val);
 	return *this;
 }
 

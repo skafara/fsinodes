@@ -1,5 +1,7 @@
 #include "DataBlock.hpp"
 
+#include <sstream>
+
 
 const I_ReadableWritable::t_Byte_Buf DataBlock::kEmpty_Buf = [] () {
 	I_ReadableWritable::t_Byte_Buf buf;
@@ -45,4 +47,24 @@ void DataBlock::Write_Reference(uint32_t idx, uint32_t dblock_idx) {
 
 bool DataBlock::Is_Empty_Dir_Item(const DataBlock::t_DirItem &dir_item) {
 	return dir_item.Inode_Idx == kEmpty_Dir_Item.Inode_Idx && std::string{dir_item.Item_Name} == std::string{kEmpty_Dir_Item.Item_Name};
+}
+
+std::string DataBlock::Read_Path() {
+	std::ostringstream osstream;
+	for (size_t i = 0; ; ++i) {
+		const char c = Read<char>(i);
+		osstream << c;
+		if (c == 0x00) {
+			break;
+		}
+	}
+	return osstream.str();
+}
+
+void DataBlock::Write_Path(const std::string &path) {
+	size_t i;
+	for (i = 0; i < path.length(); ++i) {
+		Write(i, path[i]);
+	}
+	Write(i, static_cast<char>(0x00));
 }
