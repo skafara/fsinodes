@@ -650,8 +650,8 @@ Superblock::t_Superblock FileSystem::Get_Formatted_Superblock(size_t fs_size) {
 
 void FileSystem::Init_Structures() {
 	_superblock = std::make_unique<Superblock>(_fs_container, kSuperblock_Offset);
-	_bm_inodes = std::make_unique<Bitmap>(_fs_container, _superblock->Get_BMap_Inodes_Start_Addr(), _superblock->Get_Inodes_Cnt() / sizeof(std::byte));
-	_bm_data = std::make_unique<Bitmap>(_fs_container, _superblock->Get_BMap_Data_Start_Addr(), _superblock->Get_Data_Blocks_Cnt() / sizeof(std::byte));
+	_bm_inodes = std::make_unique<Bitmap>(_fs_container, _superblock->Get_BMap_Inodes_Start_Addr(), _superblock->Get_Inodes_Cnt() / 8 * sizeof(std::byte));
+	_bm_data = std::make_unique<Bitmap>(_fs_container, _superblock->Get_BMap_Data_Start_Addr(), _superblock->Get_Data_Blocks_Cnt() / 8 * sizeof(std::byte));
 	_inodes = std::make_unique<Inodes>(_fs_container, _superblock->Get_Inodes_Start_Addr());
 	_data = std::make_shared<Data>(_fs_container, _superblock->Get_Data_Start_Addr());
 }
