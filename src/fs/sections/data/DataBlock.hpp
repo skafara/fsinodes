@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#include <cstring>
 
 #include "../../container/io/A_OffsetReadableWritable.hpp"
 
