@@ -201,7 +201,7 @@ void FileSystem::OP_mv(const std::string &path1, const std::string &path2) {
 		}
 	}
 	catch (const PathNotFoundException &) {
-		dst_dir_inode_idx = Resolve_Final_Path_Inode(path2);
+		dst_dir_inode_idx = Resolve_Final_Parent_Inode(path2);
 		dst_filename = std::filesystem::path{path2}.filename();
 	}
 	Assert_Valid_Filename_Length(dst_filename);
