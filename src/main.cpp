@@ -18,9 +18,16 @@ void Print_Info() {
 	std::cout << kColor_Reset << std::endl << std::endl;
 }
 
+void Print_Help() {
+	std::cout << "Usage:" << std::endl;
+	std::cout << "\tfsinodes <fs-data>" << std::endl << std::endl;
+	std::cout << "\t<fs-data>\t- File containing the filesystem data" << std::endl;
+}
+
 int main(int argc, char **argv) {
 	if (argc != kExpected_Args_Cnt) {
 		std::cerr << "[fsinodes]ERR: Invalid arguments count" << std::endl;
+		Print_Help();
 		return EXIT_FAILURE;
 	}
 
